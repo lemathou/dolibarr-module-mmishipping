@@ -1,0 +1,57 @@
+# Copyright (C) 2023 MOULIN Mathieu <webmaster@sfy-gestion.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Generic
+#
+
+# Module label 'ModuleMMIShippingName'
+ModuleMMIShippingName = Expéditions avancées
+# Module description 'ModuleMMIShippingDesc'
+ModuleMMIShippingDesc = Réceptions/expédition auto pour contremarques (direct fournisseur)
+
+#
+# Admin page
+#
+MMIShippingSetup = MMIShipping setup
+Settings = Settings
+MMIShippingSetupPage = MMIShipping setup page
+MMISHIPPING_DF = Gestion auto réceptions/expéditions contremarques
+MMISHIPPING_DF_ENTREPOT = Entrepôt "virtuel" pour la livraison directe (réception/expédition)
+
+#
+# About page
+#
+About = About
+MMIShippingAbout = About MMIShipping
+MMIShippingAboutPage = MMIShipping about page
+
+#
+# Sample page
+#
+MMIShippingArea = Home MMIShipping
+MyPageName = My page name
+
+#
+# Sample widget
+#
+MyWidget = My widget
+MyWidgetDescription = My widget description
+
+#
+#
+#
+MMIShippingAssignAddress = Assigner client réception
+MMIShippingSupplierOrderReceiveAndSend = Classer la réception
