@@ -12,6 +12,43 @@ class mmishipping
 {
 	protected $error;
 	
+	public static function supplier_order_shipping_address($commande)
+	{
+		$contacts = $commande->liste_contact(-1, 'external', 0, 'SHIPPING');
+		//var_dump($contacts);
+		if (!empty($contacts)) {
+			return $contacts[0];
+		}
+	}
+	
+	public static function supplier_order_shipping_address_assign($user, $commande_fourn, $commande)
+	{
+		if ($contact=static::supplier_order_shipping_address($commande)) {
+			// Assignation contact livraison commande à la commande fournisseur
+			$commande_fourn->array_options['options_fk_adresse'] = $contact['id'];
+			//var_dump($object->array_options);
+			//var_dump($object);
+			$commande_fourn->update($user);
+		}
+	}
+
+	public static function order_associated_to_supplier_order($id)
+	{
+		global $db;
+		
+		$sql = "SELECT e.fk_source id
+			FROM ".MAIN_DB_PREFIX."element_element e
+			WHERE e.`targettype` LIKE 'order_supplier' AND e.`fk_target`='".$id."' AND e.sourcetype='commande'";
+		//echo '<p>'.$sql.'</p>';
+		$resql = $db->query($sql);
+		//var_dump($resql);
+		if ($obj = $db->fetch_object($resql)) {
+			$commande = new Commande($db);
+			//var_dump($obj->id);
+			return $commande;
+		}
+	}
+
 	// expédition auto depuis réception
 	public static function commande_fourn_to_reception(User $user, CommandeFournisseur $commande_fourn, $validate=true)
 	{

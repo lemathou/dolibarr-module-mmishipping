@@ -32,7 +32,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 {
 	const MOD_NAME = 'mmishipping';
 
-
 	/**
 	 * Overloading the addMoreMassActions function : replacing the parent's function with the one below
 	 *
@@ -48,28 +47,25 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 
 		$error = 0; // Error counter
 
+		// Associated order
+		if ($this->in_context($parameters, 'ordersuppliercard') && !empty($conf->global->MMISHIPPING_DF)) {
+			// Recherche commande liée
+			$commande = mmishipping::order_associated_to_supplier_order($object->id);
+		}
+
 		// Fiche Commande
 		if ($this->in_context($parameters, 'ordersuppliercard')) {
 			// Client réception si commande liée
 			if (!empty($conf->global->MMISHIPPING_DF)) {
-				// Recherche commande liée
-				$sql = "SELECT e.fk_source id
-					FROM ".MAIN_DB_PREFIX."element_element e
-					WHERE e.`targettype` LIKE 'order_supplier' AND e.`fk_target`='".$object->id."' AND e.sourcetype='commande'";
-				//echo '<p>'.$sql.'</p>';
-				$resql = $db->query($sql);
-				if(!empty($resql) && $resql->num_rows>0) {
-					$obj = $db->fetch_object($resql);
-					$fk_commande = $obj->id;
-				}
-				
-				if (!empty($fk_commande) && !empty($user->rights->mmishipping->df->affect)){
+				if (!empty($commande) && !empty($user->rights->mmishipping->df->affect)){
+					$ok = !empty(mmishipping::supplier_order_shipping_address($commande));
 					$link = '?id='.$object->id.'&action=adresse_assign_auto';
-					echo "<a class='butAction' href='".$link."'>".$langs->trans("MMIShippingAssignAddress")."</a>";
+					echo "<a class='".($ok ?'butAction' :'butActionRefused')."'".($ok ?" href='".$link."'" :"onclick='return false;' title=\"Missing customer address\"").">".$langs->trans("MMIShippingAssignAddress")."</a>";
 				}
-				if (!empty($fk_commande) && !empty($user->rights->mmishipping->df->autoliquidation)){
+				if (!empty($commande) && !empty($user->rights->mmishipping->df->autoliquidation)){
+					$ok = !empty($object->array_options['options_fk_adresse']);
 					$link = '?id='.$object->id.'&action=receive_and_send';
-					echo "<a class='butAction' href='".$link."'>".$langs->trans("MMIShippingSupplierOrderReceiveAndSend")."</a>";
+					echo "<a class='".($ok ?'butAction' :'butActionRefused')."'".($ok ?" href='".$link."'" :"onclick='return false;' title=\"Missing customer address\"").">".$langs->trans("MMIShippingSupplierOrderReceiveAndSend")."</a>";
 				}
 			}
 		}
@@ -91,33 +87,14 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		// Associated order
 		if ($this->in_context($parameters, 'ordersuppliercard') && in_array($action, ['adresse_assign_auto', 'receive_and_send']) && !empty($conf->global->MMISHIPPING_DF)) {
 			// Recherche commande liée
-			$sql = "SELECT e.fk_source id
-				FROM ".MAIN_DB_PREFIX."element_element e
-				WHERE e.`targettype` LIKE 'order_supplier' AND e.`fk_target`='".$object->id."' AND e.sourcetype='commande'";
-			//echo '<p>'.$sql.'</p>';
-			$resql = $db->query($sql);
-			//var_dump($resql);
-			if ($obj = $db->fetch_object($resql)) {
-				$commande = new Commande($db);
-				$commande->fetch($obj->id);
-				//var_dump($commande);
-			}
+			$commande = mmishipping::order_associated_to_supplier_order($object->id);
+			//var_dump($commande);
 		}
 
 		// Assign client address
 		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='adresse_assign_auto' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF) && !empty($user->rights->mmishipping->df->affect)) {
 			//var_dump($commande);
-			// Recherche contact livraison commande
-			$contacts = $commande->liste_contact(-1, 'external', 0, 'SHIPPING');
-			if (!empty($contacts)) {
-				$contact = $contacts[0];
-				//var_dump($contact);
-				// Assignation contact livraison commande à la commande fournisseur
-				$object->array_options['options_fk_adresse'] = $contact['id'];
-				//var_dump($object->array_options);
-				//var_dump($object);
-				$object->update($user);
-			}
+			mmishipping::supplier_order_shipping_address_assign($user, $object, $commande);
 		}
 
 		// receive and send
@@ -131,20 +108,25 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 				$todo = [];
 				foreach($object->lines as $line) {
 					//var_dump($line);
+					// Quantité restant à réceptionner dans la commande fournisseur
 					$qty = $line->qty;
 					// déjà reçu
 					if (isset($object->receptions[$line->id]))
 						$qty -= $object->receptions[$line->id];
+					// @var $found Quantité encore à expédier depuis la commande
 					$found = 0;
+					//var_dump($commande->lines);
 					foreach($commande->lines as $cline) {
 						// Qté dans commande
-						if ($cline->fk_product==$line->fk_product)
+						if ($cline->fk_product==$line->fk_product) {
 							$found += $cline->qty;
-						// Qté déjà expédiée
-						if (isset($commande->expeditions[$cline->id]))
-							$found -= $commande->expeditions[$cline->id];
+							// Qté déjà expédiée
+							if (isset($commande->expeditions[$cline->id]))
+								$found -= $commande->expeditions[$cline->id];
+						}
 					}
 					//var_dump($found, $qty);
+					// Si qté à réceptionner > qté à expédier, BUG car on va en envoyer trop par rapport à ce qui est commandé
 					if ($qty>$found) {
 						$ok = false;
 						$error++;
