@@ -45,7 +45,7 @@ class modMMIShipping extends DolibarrModules
 
 		// Id for module (must be unique).
 		// Use here a free id (See in Home -> System information -> Dolibarr for list of used modules id).
-		$this->numero = 437817; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
+		$this->numero = 437818; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
 
 		// Key text used to identify module (for permissions, menus, etc...)
 		$this->rights_class = 'mmishipping';
@@ -301,114 +301,15 @@ class modMMIShipping extends DolibarrModules
 		);
 		/* END MODULEBUILDER TOPMENU */
 		/* BEGIN MODULEBUILDER LEFTMENU MYOBJECT
-		$this->menu[$r++]=array(
-			'fk_menu'=>'fk_mainmenu=mmishipping',      // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type'=>'left',                          // This is a Left menu entry
-			'titre'=>'MyObject',
-			'prefix' => img_picto('', $this->picto, 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'mmishipping',
-			'leftmenu'=>'myobject',
-			'url'=>'/mmishipping/mmishippingindex.php',
-			'langs'=>'mmishipping@mmishipping',	        // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
-			'position'=>1000+$r,
-			'enabled'=>'$conf->mmishipping->enabled',  // Define condition to show or hide menu entry. Use '$conf->mmishipping->enabled' if entry must be visible if module is enabled.
-			'perms'=>'$user->rights->mmishipping->myobject->read',			                // Use 'perms'=>'$user->rights->mmishipping->level1->level2' if you want your menu with a permission rules
-			'target'=>'',
-			'user'=>2,				                // 0=Menu for internal users, 1=external users, 2=both
-		);
-		$this->menu[$r++]=array(
-			'fk_menu'=>'fk_mainmenu=mmishipping,fk_leftmenu=myobject',	    // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type'=>'left',			                // This is a Left menu entry
-			'titre'=>'List_MyObject',
-			'mainmenu'=>'mmishipping',
-			'leftmenu'=>'mmishipping_myobject_list',
-			'url'=>'/mmishipping/myobject_list.php',
-			'langs'=>'mmishipping@mmishipping',	        // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
-			'position'=>1000+$r,
-			'enabled'=>'$conf->mmishipping->enabled',  // Define condition to show or hide menu entry. Use '$conf->mmishipping->enabled' if entry must be visible if module is enabled. Use '$leftmenu==\'system\'' to show if leftmenu system is selected.
-			'perms'=>'$user->rights->mmishipping->myobject->read',			                // Use 'perms'=>'$user->rights->mmishipping->level1->level2' if you want your menu with a permission rules
-			'target'=>'',
-			'user'=>2,				                // 0=Menu for internal users, 1=external users, 2=both
-		);
-		$this->menu[$r++]=array(
-			'fk_menu'=>'fk_mainmenu=mmishipping,fk_leftmenu=myobject',	    // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type'=>'left',			                // This is a Left menu entry
-			'titre'=>'New_MyObject',
-			'mainmenu'=>'mmishipping',
-			'leftmenu'=>'mmishipping_myobject_new',
-			'url'=>'/mmishipping/myobject_card.php?action=create',
-			'langs'=>'mmishipping@mmishipping',	        // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
-			'position'=>1000+$r,
-			'enabled'=>'$conf->mmishipping->enabled',  // Define condition to show or hide menu entry. Use '$conf->mmishipping->enabled' if entry must be visible if module is enabled. Use '$leftmenu==\'system\'' to show if leftmenu system is selected.
-			'perms'=>'$user->rights->mmishipping->myobject->write',			                // Use 'perms'=>'$user->rights->mmishipping->level1->level2' if you want your menu with a permission rules
-			'target'=>'',
-			'user'=>2,				                // 0=Menu for internal users, 1=external users, 2=both
-		);
 		END MODULEBUILDER LEFTMENU MYOBJECT */
 		// Exports profiles provided by this module
 		$r = 1;
 		/* BEGIN MODULEBUILDER EXPORT MYOBJECT */
-		/*
-		$langs->load("mmishipping@mmishipping");
-		$this->export_code[$r]=$this->rights_class.'_'.$r;
-		$this->export_label[$r]='MyObjectLines';	// Translation key (used only if key ExportDataset_xxx_z not found)
-		$this->export_icon[$r]='myobject@mmishipping';
-		// Define $this->export_fields_array, $this->export_TypeFields_array and $this->export_entities_array
-		$keyforclass = 'MyObject'; $keyforclassfile='/mmishipping/class/myobject.class.php'; $keyforelement='myobject@mmishipping';
-		include DOL_DOCUMENT_ROOT.'/core/commonfieldsinexport.inc.php';
-		//$this->export_fields_array[$r]['t.fieldtoadd']='FieldToAdd'; $this->export_TypeFields_array[$r]['t.fieldtoadd']='Text';
-		//unset($this->export_fields_array[$r]['t.fieldtoremove']);
-		//$keyforclass = 'MyObjectLine'; $keyforclassfile='/mmishipping/class/myobject.class.php'; $keyforelement='myobjectline@mmishipping'; $keyforalias='tl';
-		//include DOL_DOCUMENT_ROOT.'/core/commonfieldsinexport.inc.php';
-		$keyforselect='myobject'; $keyforaliasextra='extra'; $keyforelement='myobject@mmishipping';
-		include DOL_DOCUMENT_ROOT.'/core/extrafieldsinexport.inc.php';
-		//$keyforselect='myobjectline'; $keyforaliasextra='extraline'; $keyforelement='myobjectline@mmishipping';
-		//include DOL_DOCUMENT_ROOT.'/core/extrafieldsinexport.inc.php';
-		//$this->export_dependencies_array[$r] = array('myobjectline'=>array('tl.rowid','tl.ref')); // To force to activate one or several fields if we select some fields that need same (like to select a unique key if we ask a field of a child to avoid the DISTINCT to discard them, or for computed field than need several other fields)
-		//$this->export_special_array[$r] = array('t.field'=>'...');
-		//$this->export_examplevalues_array[$r] = array('t.field'=>'Example');
-		//$this->export_help_array[$r] = array('t.field'=>'FieldDescHelp');
-		$this->export_sql_start[$r]='SELECT DISTINCT ';
-		$this->export_sql_end[$r]  =' FROM '.MAIN_DB_PREFIX.'myobject as t';
-		//$this->export_sql_end[$r]  =' LEFT JOIN '.MAIN_DB_PREFIX.'myobject_line as tl ON tl.fk_myobject = t.rowid';
-		$this->export_sql_end[$r] .=' WHERE 1 = 1';
-		$this->export_sql_end[$r] .=' AND t.entity IN ('.getEntity('myobject').')';
-		$r++; */
 		/* END MODULEBUILDER EXPORT MYOBJECT */
 
 		// Imports profiles provided by this module
 		$r = 1;
 		/* BEGIN MODULEBUILDER IMPORT MYOBJECT */
-		/*
-		$langs->load("mmishipping@mmishipping");
-		$this->import_code[$r]=$this->rights_class.'_'.$r;
-		$this->import_label[$r]='MyObjectLines';	// Translation key (used only if key ExportDataset_xxx_z not found)
-		$this->import_icon[$r]='myobject@mmishipping';
-		$this->import_tables_array[$r] = array('t' => MAIN_DB_PREFIX.'mmishipping_myobject', 'extra' => MAIN_DB_PREFIX.'mmishipping_myobject_extrafields');
-		$this->import_tables_creator_array[$r] = array('t' => 'fk_user_author'); // Fields to store import user id
-		$import_sample = array();
-		$keyforclass = 'MyObject'; $keyforclassfile='/mmishipping/class/myobject.class.php'; $keyforelement='myobject@mmishipping';
-		include DOL_DOCUMENT_ROOT.'/core/commonfieldsinimport.inc.php';
-		$import_extrafield_sample = array();
-		$keyforselect='myobject'; $keyforaliasextra='extra'; $keyforelement='myobject@mmishipping';
-		include DOL_DOCUMENT_ROOT.'/core/extrafieldsinimport.inc.php';
-		$this->import_fieldshidden_array[$r] = array('extra.fk_object' => 'lastrowid-'.MAIN_DB_PREFIX.'mmishipping_myobject');
-		$this->import_regex_array[$r] = array();
-		$this->import_examplevalues_array[$r] = array_merge($import_sample, $import_extrafield_sample);
-		$this->import_updatekeys_array[$r] = array('t.ref' => 'Ref');
-		$this->import_convertvalue_array[$r] = array(
-			't.ref' => array(
-				'rule'=>'getrefifauto',
-				'class'=>(empty($conf->global->MMISHIPPING_MYOBJECT_ADDON) ? 'mod_myobject_standard' : $conf->global->MMISHIPPING_MYOBJECT_ADDON),
-				'path'=>"/core/modules/commande/".(empty($conf->global->MMISHIPPING_MYOBJECT_ADDON) ? 'mod_myobject_standard' : $conf->global->MMISHIPPING_MYOBJECT_ADDON).'.php'
-				'classobject'=>'MyObject',
-				'pathobject'=>'/mmishipping/class/myobject.class.php',
-			),
-			't.fk_soc' => array('rule' => 'fetchidfromref', 'file' => '/societe/class/societe.class.php', 'class' => 'Societe', 'method' => 'fetch', 'element' => 'ThirdParty'),
-			't.fk_user_valid' => array('rule' => 'fetchidfromref', 'file' => '/user/class/user.class.php', 'class' => 'User', 'method' => 'fetch', 'element' => 'user'),
-			't.fk_mode_reglement' => array('rule' => 'fetchidfromcodeorlabel', 'file' => '/compta/paiement/class/cpaiement.class.php', 'class' => 'Cpaiement', 'method' => 'fetch', 'element' => 'cpayment'),
-		);
-		$r++; */
 		/* END MODULEBUILDER IMPORT MYOBJECT */
 	}
 
@@ -433,11 +334,6 @@ class modMMIShipping extends DolibarrModules
 		// Create extrafields during init
 		//include_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 		//$extrafields = new ExtraFields($this->db);
-		//$result1=$extrafields->addExtraField('mmishipping_myattr1', "New Attr 1 label", 'boolean', 1,  3, 'thirdparty',   0, 0, '', '', 1, '', 0, 0, '', '', 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
-		//$result2=$extrafields->addExtraField('mmishipping_myattr2', "New Attr 2 label", 'varchar', 1, 10, 'project',      0, 0, '', '', 1, '', 0, 0, '', '', 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
-		//$result3=$extrafields->addExtraField('mmishipping_myattr3', "New Attr 3 label", 'varchar', 1, 10, 'bank_account', 0, 0, '', '', 1, '', 0, 0, '', '', 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
-		//$result4=$extrafields->addExtraField('mmishipping_myattr4', "New Attr 4 label", 'select',  1,  3, 'thirdparty',   0, 1, '', array('options'=>array('code1'=>'Val1','code2'=>'Val2','code3'=>'Val3')), 1,'', 0, 0, '', '', 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
-		//$result5=$extrafields->addExtraField('mmishipping_myattr5', "New Attr 5 label", 'text',    1, 10, 'user',         0, 0, '', '', 1, '', 0, 0, '', '', 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
 
 		// Permissions
 		$this->remove($options);
