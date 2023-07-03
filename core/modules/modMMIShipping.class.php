@@ -137,7 +137,7 @@ class modMMIShipping extends DolibarrModules
 		// A condition to hide module
 		$this->hidden = false;
 		// List of module class names as string that must be enabled if this module is enabled. Example: array('always1'=>'modModuleToEnable1','always2'=>'modModuleToEnable2', 'FR1'=>'modModuleToEnableFR'...)
-		$this->depends = array('modMMICommon');
+		$this->depends = array('modMMICommon', 'modProduct', 'modFournisseur', 'modExpedition', 'modReception');
 		$this->requiredby = array(); // List of module class names as string to disable if this one is disabled. Example: array('modModuleToDisable1', ...)
 		$this->conflictwith = array(); // List of module class names as string this module is in conflict with. Example: array('modModuleToDisable1', ...)
 
@@ -332,8 +332,11 @@ class modMMIShipping extends DolibarrModules
 		}
 
 		// Create extrafields during init
-		//include_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
-		//$extrafields = new ExtraFields($this->db);
+		include_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+		$extrafields = new ExtraFields($this->db);
+
+		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled || $conf->mmifournisseurprice->enabled');
+		$extrafields->addExtraField('fk_adresse', $langs->trans('Extrafield_fk_adresse'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Contact:contact/class/contact.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
 
 		// Permissions
 		$this->remove($options);

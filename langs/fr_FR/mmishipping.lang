@@ -55,3 +55,11 @@ MyWidgetDescription = My widget description
 #
 MMIShippingAssignAddress = Assigner client réception
 MMIShippingSupplierOrderReceiveAndSend = Classer la réception
+
+#
+# Extrafields
+#
+Extrafield_fk_entrepot = Dépôt réception
+ExtrafieldToolTip_fk_entrepot = Dépôt où doit être livrée la marchandise
+Extrafield_fk_adresse = Client réception
+ExtrafieldToolTip_fk_adresse = Adresse client où doit être livrée directement la marchandise (cas d'une contremarque)
