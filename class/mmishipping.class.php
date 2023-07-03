@@ -10,6 +10,8 @@ require_once DOL_DOCUMENT_ROOT.'/reception/class/reception.class.php';
 
 class mmishipping
 {
+	protected $error;
+	
 	// expédition auto depuis réception
 	public static function commande_fourn_to_reception(User $user, CommandeFournisseur $commande_fourn, $validate=true)
 	{
@@ -18,6 +20,8 @@ class mmishipping
 		global $conf, $db, $langs;
 
 		if (! $user->rights->reception->creer)
+			return;
+		if (empty($user->rights->mmishipping->df->autoliquidation))
 			return;
 		
 		if (empty($commande_fourn))
@@ -126,6 +130,8 @@ class mmishipping
 		global $conf, $db, $langs;
 
 		if (! $user->rights->expedition->creer)
+			return;
+		if (empty($user->rights->mmishipping->df->autoliquidation))
 			return;
 		
 		if (empty($commande_fourn))

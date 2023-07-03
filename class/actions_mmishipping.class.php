@@ -63,11 +63,11 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 					$fk_commande = $obj->id;
 				}
 				
-				if (!empty($fk_commande)){
+				if (!empty($fk_commande) && !empty($user->rights->mmishipping->df->affect)){
 					$link = '?id='.$object->id.'&action=adresse_assign_auto';
 					echo "<a class='butAction' href='".$link."'>".$langs->trans("MMIShippingAssignAddress")."</a>";
 				}
-				if (!empty($fk_commande)){
+				if (!empty($fk_commande) && !empty($user->rights->mmishipping->df->autoliquidation)){
 					$link = '?id='.$object->id.'&action=receive_and_send';
 					echo "<a class='butAction' href='".$link."'>".$langs->trans("MMIShippingSupplierOrderReceiveAndSend")."</a>";
 				}
@@ -105,7 +105,7 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		}
 
 		// Assign client address
-		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='adresse_assign_auto' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF)) {
+		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='adresse_assign_auto' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF) && !empty($user->rights->mmishipping->df->affect)) {
 			//var_dump($commande);
 			// Recherche contact livraison commande
 			$contacts = $commande->liste_contact(-1, 'external', 0, 'SHIPPING');
@@ -121,7 +121,7 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		}
 
 		// receive and send
-		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='receive_and_send' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF) && !empty($conf->global->MMISHIPPING_DF_ENTREPOT)) {
+		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='receive_and_send' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF) && !empty($conf->global->MMISHIPPING_DF_ENTREPOT) && !empty($user->rights->mmishipping->df->autoliquidation)) {
 			$entrepot = new Entrepot($db);
 			$entrepot->fetch($conf->global->MMISHIPPING_DF_ENTREPOT);
 			$commande->loadExpeditions();
