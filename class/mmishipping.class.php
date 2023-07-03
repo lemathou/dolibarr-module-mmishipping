@@ -44,6 +44,7 @@ class mmishipping
 		//var_dump($resql);
 		if ($obj = $db->fetch_object($resql)) {
 			$commande = new Commande($db);
+			$commande->fetch($obj->id);
 			//var_dump($obj->id);
 			return $commande;
 		}
