@@ -58,9 +58,9 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			// Client réception si commande liée
 			if (!empty($conf->global->MMISHIPPING_DF)) {
 				if (!empty($commande) && !empty($user->rights->mmishipping->df->affect)) {
-					$ok = !empty(mmishipping::supplier_order_shipping_address($commande)) && ($object->statut >= 0) && ($object->statut <= 3);
+					$ok = !empty(mmishipping::supplier_order_shipping_address($user, $object, $commande)) && ($object->statut >= 0) && ($object->statut <= 3);
 					$link = '?id='.$object->id.'&action=adresse_assign_auto';
-					echo "<a class='".($ok ?'butAction' :'butActionRefused')."'".($ok ?" href='".$link."'" :"onclick='return false;' title=\"Missing customer address or order closed\"").">".$langs->trans("MMIShippingAssignAddress")."</a>";
+					echo "<a class='".($ok ?'butAction' :'butActionRefused')."'".($ok ?" href='".$link."'" :"onclick='return false;' title=\"Multiple customer addresses or order closed\"").">".$langs->trans("MMIShippingAssignAddress")."</a>";
 				}
 				if (!empty($commande) && !empty($user->rights->mmishipping->df->autoliquidation)) {
 					$ok = !empty($object->array_options['options_fk_adresse']) && ($object->statut == 3);

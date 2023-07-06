@@ -2,6 +2,7 @@
 
 require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/stock/class/entrepot.class.php';
+require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/expedition/class/expedition.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
@@ -12,20 +13,46 @@ class mmishipping
 {
 	protected $error;
 	
-	public static function supplier_order_shipping_address($commande)
+	public static function supplier_order_shipping_address($user, $commande_fourn, $commande)
 	{
-		$contacts = $commande->liste_contact(-1, 'external', 0, 'SHIPPING');
-		//var_dump($contacts);
-		if (!empty($contacts)) {
+		global $db;
+		
+		// Contact livraison défini dans la commande
+		if (!empty($contacts=$commande->liste_contact(-1, 'external', 0, 'SHIPPING'))) {
 			return $contacts[0];
+		}
+
+		// Recherche parmi les contacts du client
+		$customer = new Societe($db);
+		$customer->fetch($commande->socid);
+		$contacts = $customer->contact_array_objects();
+		//var_dump($contacts); die();
+		// Un seul contact => on prend
+		if (count($contacts)==1) {
+			foreach($contacts as $contact)
+				return $contact;
+		}
+		// Aucun contact => on créé
+		elseif(count($contacts) == 0) {
+			if (!empty($contactId = $customer->create_individual($user))) {
+				$contact = new Contact($db);
+				$contact->fetch($contactId);
+				$name = !empty($customer->name_alias) ?$customer->name_alias :$customer->nom;
+				$namee = explode(' ', $name);
+				$contact->lastname = array_shift($namee);
+				$contact->firstname = implode(' ', $namee);
+				$contact->update($contactId, $user);
+				return $contact;
+			}
 		}
 	}
 	
 	public static function supplier_order_shipping_address_assign($user, $commande_fourn, $commande)
 	{
-		if ($contact=static::supplier_order_shipping_address($commande)) {
+		if (!empty($contact = static::supplier_order_shipping_address($user, $commande_fourn, $commande))) {
+			//var_dump($contact); die();
 			// Assignation contact livraison commande à la commande fournisseur
-			$commande_fourn->array_options['options_fk_adresse'] = $contact['id'];
+			$commande_fourn->array_options['options_fk_adresse'] = is_array($contact) ?$contact['id'] :(is_object($contact) ?$contact->id :'');
 			//var_dump($object->array_options);
 			//var_dump($object);
 			$commande_fourn->update($user);
