@@ -161,6 +161,12 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 						//var_dump($todo);
 						$reception = mmishipping::commande_fourn_to_reception($user, $object);
 						$shipping = mmishipping::commande_fourn_to_shipping($user, $object);
+						// Lien entre les deux
+						$sql = 'INSERT INTO '.MAIN_DB_PREFIX.'element_element
+							(fk_source, sourcetype, fk_target, targettype)
+							VALUES
+							('.$reception->id.', "reception", '.$shipping->id.', "shipping")';
+						$this->db->query($sql);
 					}
 					//var_dump($ok);
 				}
@@ -176,6 +182,42 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			return 0; // or return 1 to replace standard code
 		} else {
 			//$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+
+
+	public function getLabel($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf, $user, $langs, $db;
+
+		$error = 0; // Error counter
+
+		// Display supplier & supplier_email in reception popup
+		if ($this->in_context($parameters, 'receptiondao')) {
+			// Recherche commande liée
+			//var_dump($object); die();
+			// Pas les infos dans le contexte => c'est qu'on est peut-être dans une liste et on va pas tout aller chercher...
+			if (empty($object->origin) || empty($object->origin_id))
+				return 0;
+			if (! is_object($object->{$object->origin}))
+				$object->fetch_origin();
+			if(is_object($object->{$object->origin})) {
+				$parameters['label'] .= '<br><b>'.$langs->trans($object->origin).':</b> '.$object->{$object->origin}->ref;
+			}
+			if (! is_object($object->thirdparty))
+				$object->fetch_thirdparty();
+			if(is_object($object->thirdparty)) {
+				$parameters['label'] .= '<br><b>'.$langs->trans('Supplier').':</b> '.$object->thirdparty->name;
+				$parameters['label'] .= '<br><b>'.$langs->trans('Supplier').' '.$langs->trans('email').':</b> '.$object->thirdparty->email;
+				$parameters['label'] .= '<br><b>'.$langs->trans('Supplier').' '.$langs->trans('telephone').':</b> '.$object->thirdparty->phone;
+			}
+		}
+
+		if (!$error) {
+			return 0; // or return 1 to replace standard code
+		} else {
+			$this->errors[] = 'Error message';
 			return -1;
 		}
 	}
