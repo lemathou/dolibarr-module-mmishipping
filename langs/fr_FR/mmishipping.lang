@@ -54,7 +54,9 @@ MyWidgetDescription = My widget description
 #
 #
 MMIShippingAssignAddress = Assigner client réception
+MMIShippingAssignAddresses = Assigner clients réception
 MMIShippingSupplierOrderReceiveAndSend = Classer la réception
+MMIShippingSupplierOrdersReceiveAndSend = Créer les réceptions & expéditions
 
 #
 # Extrafields

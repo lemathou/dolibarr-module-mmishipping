@@ -46,6 +46,8 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		global $conf, $user, $langs, $db;
 
 		$error = 0; // Error counter
+		//var_dump($this); die();
+		//var_dump(__CLASS__, get_called_class(), static::MOD_NAME, $lang);
 
 		// Associated order
 		if ($this->in_context($parameters, 'ordersuppliercard') && !empty($conf->global->MMISHIPPING_DF)) {
@@ -99,82 +101,9 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 
 		// receive and send
 		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='receive_and_send' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF) && !empty($conf->global->MMISHIPPING_DF_ENTREPOT) && !empty($user->rights->mmishipping->df->autoliquidation)) {
-			if ($object->statut > 3) {
-				$error++;
-				// @todo : mettre le message en traduction
-				$this->errors[] = 'Order is closed';
-			}
-			elseif ($object->statut < 2) {
-				$error++;
-				// @todo : mettre le message en traduction
-				$this->errors[] = 'Order is not ordered';
-			}
-			else {
-				$entrepot = new Entrepot($db);
-				$entrepot->fetch($conf->global->MMISHIPPING_DF_ENTREPOT);
-				$commande->loadExpeditions();
-				$object->loadReceptions();
-				if ($entrepot->id) {
-					$ok = true;
-					$todo = [];
-					foreach($object->lines as $line) {
-						//var_dump($line);
-						// Quantité restant à réceptionner dans la commande fournisseur
-						$qty = $line->qty;
-						// déjà reçu
-						if (isset($object->receptions[$line->id]))
-							$qty -= $object->receptions[$line->id];
-						// @var $found Quantité encore à expédier depuis la commande
-						$found = 0;
-						//var_dump($commande->lines);
-						foreach($commande->lines as $cline) {
-							// Qté dans commande
-							if ($cline->fk_product==$line->fk_product) {
-								$found += $cline->qty;
-								// Qté déjà expédiée
-								if (isset($commande->expeditions[$cline->id]))
-									$found -= $commande->expeditions[$cline->id];
-							}
-						}
-						//var_dump($found, $qty);
-						// Si qté à réceptionner > qté à expédier, BUG car on va en envoyer trop par rapport à ce qui est commandé
-						if ($qty>$found) {
-							$ok = false;
-							$error++;
-							// @todo : mettre le message en traduction
-							$this->errors[] = 'Qty too high for line "'.$line->libelle.'", found '.$found.' but needed to send only '.$qty;
-							break;
-						}
-						elseif ($qty>0) {
-							$todo[$line->id] = $qty;
-						}
-					}
-					if (empty($todo)) {
-						$ok = false;
-						$error++;
-						// @todo : mettre le message en traduction
-						$this->errors[] = 'Nothing to send';
-					}
-					// Créer réception & expé
-					if ($ok) {
-						//
-						//var_dump($todo);
-						$reception = mmishipping::commande_fourn_to_reception($user, $object);
-						$shipping = mmishipping::commande_fourn_to_shipping($user, $object);
-						// Lien entre les deux
-						$sql = 'INSERT INTO '.MAIN_DB_PREFIX.'element_element
-							(fk_source, sourcetype, fk_target, targettype)
-							VALUES
-							('.$reception->id.', "reception", '.$shipping->id.', "shipping")';
-						$this->db->query($sql);
-					}
-					//var_dump($ok);
-				}
-				else {
-					$error++;
-					// @todo : mettre le message en traduction
-					$this->errors[] = 'Missing entrepot '.$conf->global->MMISHIPPING_DF_ENTREPOT.', bad config MMISHIPPING_DF_ENTREPOT';
-				}
+			if (mmishipping::autoliquidation($user, $object, $commande) < 0) {
+				$error = mmishipping::$error;
+				$this->errors = array_merge($this->errors, mmishipping::$errors);
 			}
 		}
 
@@ -182,6 +111,135 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			return 0; // or return 1 to replace standard code
 		} else {
 			//$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+
+	// MASS Actions
+
+	function addMoreMassActions($parameters, &$object, &$action, $hookmanager)
+	{
+		global $langs, $conf, $user;
+		
+		$error = 0; // Error counter
+		$myvalue = 'test'; // A result value
+		$print = '';
+		//die();
+		//var_dump($this); die();
+		//var_dump(__CLASS__, get_called_class(), static::MOD_NAME, $lang);
+		//$langs->load('mmishipping@mmishipping');
+
+		if ($this->in_context($parameters, 'supplierorderlist') && !empty($conf->global->MMISHIPPING_DF))
+		{
+			//var_dump($parameters);
+			//$this->results = [];
+			if (!empty($user->rights->mmishipping->df->affect))
+				$print .= '<option value="adresse_assign_auto">'.img_picto('', 'supplier', 'class="pictofixedwidth"').$langs->trans("MMIShippingAssignAddresses").'</option>';
+			if (!empty($conf->global->MMISHIPPING_DF_ENTREPOT) && !empty($user->rights->mmishipping->df->autoliquidation))
+				$print .= '<option value="receive_and_send">'.img_picto('', 'supplier', 'class="pictofixedwidth"').$langs->trans("MMIShippingSupplierOrdersReceiveAndSend").'</option>';
+			//var_dump($print);
+		}
+
+		if (! $error)
+		{
+			$this->results = array('myreturn' => $myvalue);
+			$this->resprints = $print;
+			return 0; // or return 1 to replace standard code
+		}
+		else
+		{
+			if (empty($this->errors))
+				$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+
+	function doMassActions($parameters, &$object, &$action, $hookmanager)
+	{	
+		global $db, $user, $conf;
+		
+		$error = 0; // Error counter
+		$myvalue = 'test'; // A result value
+		$print = '';
+
+		if (empty($massaction = $parameters['massaction']))
+			return 0;
+		//var_dump($parameters);
+		
+		if ($this->in_context($parameters, 'supplierorderlist')
+			&& $massaction=='receive_and_send'
+			&& !empty($conf->global->MMISHIPPING_DF) && !empty($conf->global->MMISHIPPING_DF_ENTREPOT)
+			&& !empty($user->rights->mmishipping->df->autoliquidation))
+		{
+			foreach($parameters['toselect'] as $id) {
+				$object = new CommandeFournisseur($db);
+				$object->fetch($id);
+				$commande = mmishipping::order_associated_to_supplier_order($id);
+				//var_dump($id, $object, $commande); die();
+				if (!empty($commande)) {
+					if (mmishipping::autoliquidation($user, $object, $commande) < 0) {
+						$error += mmishipping::$error;
+						$this->errors = array_merge($this->errors, mmishipping::$errors);
+					}
+				}
+			}
+		}
+		if ($this->in_context($parameters, 'supplierorderlist')
+			&& $massaction=='adresse_assign_auto'
+			&& !empty($conf->global->MMISHIPPING_DF)
+			&& !empty($user->rights->mmishipping->df->affect))
+		{
+			foreach($parameters['toselect'] as $id) {
+				$object = new CommandeFournisseur($db);
+				$object->fetch($id);
+				$commande = mmishipping::order_associated_to_supplier_order($id);
+				//var_dump($id, $object, $commande); die();
+				if (!empty($commande)) {
+					$r = mmishipping::supplier_order_shipping_address_assign($user, $object, $commande);
+					var_dump($r);
+				}
+			}
+			//die('adresse_assign_auto');
+		}
+
+		if (! $error)
+		{
+			$this->results = array('myreturn' => $myvalue);
+			$this->resprints = $print;
+			return 0; // or return 1 to replace standard code
+		}
+		else
+		{
+			if (empty($this->errors))
+				$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+
+	function doPreMassActions($parameters, &$object, &$action, $hookmanager)
+	{
+		global $db, $conf;
+
+		$error = 0; // Error counter
+		$myvalue = 'test'; // A result value
+		$print = '';
+		
+		if ($this->in_context($parameters, 'supplierorderlist') && $action=='receive_and_send' && !empty($conf->global->MMISHIPPING_DF))
+		{
+		}
+		elseif ($this->in_context($parameters, 'supplierorderlist') && $action=='adresse_assign_auto' && !empty($conf->global->MMISHIPPING_DF))
+		{
+		}
+
+		if (! $error)
+		{
+			$this->results = array('myreturn' => $myvalue);
+			$this->resprints = $print;
+			return 0; // or return 1 to replace standard code
+		}
+		else
+		{
+			$this->errors[] = 'Error message';
 			return -1;
 		}
 	}
@@ -221,4 +279,99 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			return -1;
 		}
 	}
+
+    /**
+     * Semble servir à afficher des filtrer globaux
+     */
+    function printFieldPreListTitle($parameters, &$object, &$action, $hookmanager)
+    {
+        $error = 0; // Error counter
+        $print = '';
+    
+        if ($this->in_context($parameters, 'supplierorderlist')) {
+            //var_dump($parameters);
+            $print .= '<div class="inline-block">';
+			$search_fk_adresse_notnull = GETPOST('search_fk_adresse_notnull');
+			$print .= '&nbsp;Adresse client :';
+			$print .= '<input type="checkbox" value="1" id="search_fk_adresse_notnull" name="search_fk_adresse_notnull" '.($search_fk_adresse_notnull ?' checked="checked"' :'').' /><label for="search_fk_adresse_notnull"> renseignée</label>';
+			$search_fk_adresse_null = GETPOST('search_fk_adresse_null');
+            $print .= '<input type="checkbox" value="1" id="search_fk_adresse_null" name="search_fk_adresse_null" '.($search_fk_adresse_null ?' checked="checked"' :'').' /><label for="search_fk_adresse_null">non renseignée</label>';
+			$print .= '</div>';
+
+            $print .= '<div class="inline-block">';
+			$search_fk_entrepot_notnull = GETPOST('search_fk_entrepot_notnull');
+			$print .= '&nbsp;Entrepot :';
+			$print .= '<input type="checkbox" value="1" id="search_fk_entrepot_notnull" name="search_fk_entrepot_notnull" '.($search_fk_entrepot_notnull ?' checked="checked"' :'').' /><label for="search_fk_entrepot_notnull">renseigné</label>';
+			$search_fk_entrepot_null = GETPOST('search_fk_entrepot_null');
+            $print .= '<input type="checkbox" value="1" id="search_fk_entrepot_null" name="search_fk_entrepot_null" '.($search_fk_entrepot_null ?' checked="checked"' :'').' /><label for="search_fk_entrepot_null">non renseigné</label>';
+			$print .= '</div>';
+        }
+    
+        if (! $error)
+        {
+            $this->resprints = $print;
+            return 0; // or return 1 to replace standard code
+        }
+        else
+        {
+            $this->errors[] = 'Error message';
+            return -1;
+        }
+    }
+
+    function printFieldListSearchParam($parameters, &$object, &$action, $hookmanager)
+    {
+        $error = 0; // Error counter
+        $print = '';
+    
+        if ($this->in_context($parameters, 'supplierorderlist')) {
+            //var_dump($parameters);
+            foreach(['search_fk_adresse_notnull', 'search_fk_adresse_null', 'search_fk_entrepot_notnull', 'search_fk_entrepot_null'] as $i)
+				if (GETPOST($i))
+					$print .= '&'.$i.'=1';
+        }
+		//die($print);
+    
+        if (! $error)
+        {
+            $this->resprints = $print;
+            return 0; // or return 1 to replace standard code
+        }
+        else
+        {
+            $this->errors[] = 'Error message';
+            return -1;
+        }
+    }
+
+    function printFieldListWhere($parameters, &$object, &$action, $hookmanager)
+    {
+        $error = 0; // Error counter
+        $print = '';
+    
+        if ($this->in_context($parameters, 'supplierorderlist')) {
+			if (GETPOST('search_fk_adresse_notnull'))
+	            $print .= ' AND ef.fk_adresse IS NOT NULL';
+			elseif (GETPOST('search_fk_adresse_null'))
+				$print .= ' AND ef.fk_adresse IS NULL';
+			if (GETPOST('search_fk_entrepot_notnull'))
+				$print .= ' AND ef.fk_entrepot IS NOT NULL';
+			elseif (GETPOST('search_fk_entrepot_null'))
+				$print .= ' AND ef.fk_entrepot IS NULL';
+            //die('coucou');
+        }
+    
+        if (! $error)
+        {
+            $this->resprints = $print;
+            return 0; // or return 1 to replace standard code
+        }
+        else
+        {
+            $this->errors[] = 'Error message';
+            return -1;
+        }
+    }
 }
+
+ActionsMMIShipping::__init();

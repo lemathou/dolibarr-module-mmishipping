@@ -116,6 +116,7 @@ class modMMIShipping extends DolibarrModules
 			// Set here all hooks context managed by module. To find available hook context, make a "grep -r '>initHooks(' *" on source code. You can also set hook context to 'all'
 			'hooks' => array(
 				'ordersuppliercard',
+				'supplierorderlist',
 				'receptiondao',
 				//   'data' => array(
 				//       'hookcontext1',
@@ -285,6 +286,7 @@ class modMMIShipping extends DolibarrModules
 		$r = 0;
 		// Add here entries to declare new menus
 		/* BEGIN MODULEBUILDER TOPMENU */
+		/*
 		$this->menu[$r++] = array(
 			'fk_menu'=>'', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
 			'type'=>'top', // This is a Top menu entry
@@ -300,6 +302,7 @@ class modMMIShipping extends DolibarrModules
 			'target'=>'',
 			'user'=>2, // 0=Menu for internal users, 1=external users, 2=both
 		);
+		*/
 		/* END MODULEBUILDER TOPMENU */
 		/* BEGIN MODULEBUILDER LEFTMENU MYOBJECT
 		END MODULEBUILDER LEFTMENU MYOBJECT */
