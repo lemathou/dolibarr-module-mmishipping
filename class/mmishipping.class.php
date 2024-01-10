@@ -276,9 +276,13 @@ class mmishipping
 		$object->fk_incoterms = $objectsrc->fk_incoterms;
 		$object->location_incoterms = $objectsrc->location_incoterms;
 
-		// Parcours produits commande
+		//var_dump($conf->productbatch->enabled);
+		
+		$fcp_list = [];
+		//$commande_fourn->loadReceptions();
+		// Parcours produits commande fournisseur
 		foreach ($commande_fourn->lines as $line) {
-			//var_dump($conf->productbatch->enabled, $line);
+			//var_dump($line);
 			if (! $line->fk_product)
 				continue;
 
@@ -293,16 +297,96 @@ class mmishipping
 			// Product shippable (not service, etc.)
 			if ($product->type != 0)
 				continue;
+			
+			$qty = $line->qty;
+			// déjà reçu
+			// if (isset($commande_fourn->receptions[$line->id]))
+			// 	$qty -= $commande_fourn->receptions[$line->id];
 
-			foreach($order->lines as $cline) {
-				if($cline->fk_product != $line->fk_product)
+			if (!isset($fcp_list[$product->id]))
+				$fcp_list[$product->id] = $qty;
+			else
+				$fcp_list[$product->id] += $qty;
+		}
+		//var_dump($fcp_list);
+
+		$cp_list = [];
+		$order->loadExpeditions();
+		// Parcours produits commande client
+		foreach ($order->lines as $line) {
+			//var_dump($line);
+			if (! $line->fk_product)
+				continue;
+
+			$product = new Product($db);
+			$product->fetch($line->fk_product);
+			if (! $product->id)
+				continue;
+			// Kit alimentaire => ne pas expédier ça bug
+			//if (!empty($product->array_options['options_compose']))
+			//	continue;
+
+			$qty = $line->qty;
+			// Qté déjà expédiée
+			if (isset($order->expeditions[$line->id]))
+				$qty -= $order->expeditions[$line->id];
+
+			// Product shippable (not service, etc.)
+			if ($product->type != 0)
+				continue;
+
+			$cp_list[$line->fk_product][$line->id] = $qty;
+		}
+		//var_dump($cp_list);
+
+		// Boucle à envoyer présent commande fournisseur
+		foreach ($fcp_list as $id=>$qty) {
+			$qty_reste = $qty;
+
+			//var_dump($id, $qty);
+			// Boucle reste à envoyer dans commande client
+			foreach($cp_list[$id] as $cline_id=>$cqty) {
+				//var_dump($cline_id, $cqty);
+
+				// Plus rien à expédier dans la lignede commande client
+				if ($cqty==0) {
+					unset($cp_list[$id][$cline_id]);
 					continue;
-				$ret = $object->addline($warehouse_id, $cline->id, $cline->qty);
+				}
+				// Plus rien à expédier lié à la ligne de commande fournisseur
+				if ($qty_reste==0) {
+					break;
+				}
+
+				// On en a assez pour finir
+				if ($cqty>=$qty_reste) {
+					$eqty = $qty_reste;
+				}
+				// Pas assez, on consomme toute la ligne de commande
+				else {
+					$eqty = $cqty;
+				}
+
+				// Mis à jour des qte
+				// Reste à expédier dans la ligne de commande fournisseur
+				$qty_reste -= $eqty;
+				// Reste à expédier dans la ligne de commande client
+				$cp_list[$id][$cline_id] -= $eqty;
+				// Plus rien on vire la ligne (c'est pas utile en fait)
+				if ($cp_list[$id][$cline_id]==0)
+					unset($cp_list[$id][$cline_id]);
+
+				//var_dump($eqty);
+				$ret = $object->addline($warehouse_id, $cline_id, $eqty);
 				if ($ret < 0) {
 					setEventMessages($object->error, $object->errors, 'errors');
 					$error++;
 				}
 			}
+
+			// Si une erreur on stoppe
+			if ($error)
+				break;
 		}
 
 		if (!$error) {
@@ -351,7 +435,7 @@ class mmishipping
 		}
 	}
 
-	public static function autoliquidation($user, $object, $commande)
+	public static function autoliquidation($user, CommandeFournisseur $object, Commande $commande)
 	{
 		global $conf, $db;
 
