@@ -339,8 +339,17 @@ class modMMIShipping extends DolibarrModules
 		include_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 		$extrafields = new ExtraFields($this->db);
 
+		// Shipping
 		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled || $conf->mmifournisseurprice->enabled');
 		$extrafields->addExtraField('fk_adresse', $langs->trans('Extrafield_fk_adresse'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Contact:contact/class/contact.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+
+		// Supplier order
+		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldTooltip_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		$extrafields->addExtraField('fk_adresse', $langs->trans('Extrafield_fk_adresse'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Contact:contact/class/contact.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldTooltip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+
+		// Reception
+		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'reception', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldTooltip_commande_fournisseur_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		$extrafields->addExtraField('fk_adresse', $langs->trans('Extrafield_fk_adresse'), 'link', 100, '', 'reception', 0, 0, '', array('options'=>array('Contact:contact/class/contact.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldTooltip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
 
 		// Permissions
 		$this->remove($options);

@@ -18,9 +18,9 @@
 #
 
 # Module label 'ModuleMMIShippingName'
-ModuleMMIShippingName = Expéditions avancées
+ModuleMMIShippingName = Expéditions/Réceptions avancées
 # Module description 'ModuleMMIShippingDesc'
-ModuleMMIShippingDesc = Réceptions/expédition auto pour contremarques (direct fournisseur)
+ModuleMMIShippingDesc = Champs supplémentaires, Réceptions/expédition auto pour contremarques (direct fournisseur)
 
 #
 # Admin page
@@ -28,8 +28,11 @@ ModuleMMIShippingDesc = Réceptions/expédition auto pour contremarques (direct 
 MMIShippingSetup = MMIShipping setup
 Settings = Settings
 MMIShippingSetupPage = MMIShipping setup page
+MMI_SHIPPING = Expéditions
 MMISHIPPING_DF = Gestion auto réceptions/expéditions contremarques
 MMISHIPPING_DF_ENTREPOT = Entrepôt "virtuel" pour la livraison directe (réception/expédition)
+MMI_RECEPTION = Réceptions
+MMI_RECEPTION_SENDER_ADDRESS = Affichage de l'adresse du dépît ou du contact selon le type de réception
 
 #
 # About page
@@ -65,3 +68,5 @@ Extrafield_fk_entrepot = Dépôt réception
 ExtrafieldToolTip_fk_entrepot = Dépôt où doit être livrée la marchandise
 Extrafield_fk_adresse = Client réception
 ExtrafieldToolTip_fk_adresse = Adresse client où doit être livrée directement la marchandise (cas d'une contremarque)
+Extrafield_commande_fournisseur_fk_entrepot = Entrepôt réception
+ExtrafieldTooltip_commande_fournisseur_fk_entrepot = Entrepôt de réception de la marchandise, lorsque tout est reçu dans le même entrepôt de la société
