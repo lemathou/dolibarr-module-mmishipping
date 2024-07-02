@@ -33,6 +33,8 @@ MMISHIPPING_DF = Gestion auto réceptions/expéditions contremarques
 MMISHIPPING_DF_ENTREPOT = Entrepôt "virtuel" pour la livraison directe (réception/expédition)
 MMI_RECEPTION = Réceptions
 MMI_RECEPTION_SENDER_ADDRESS = Affichage de l'adresse du dépît ou du contact selon le type de réception
+STOCK_DISPLAY_WARN_IN_SHIPMENT_ENHANCED = Afficher les warnings dans les expé de façon plus lisible
+STOCK_DISPLAY_WARN_IN_SHIPMENT_ONLY_NEEDED = Masquer les warnings dans les expé si déjà expédié
 
 #
 # About page

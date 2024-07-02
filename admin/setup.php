@@ -34,6 +34,9 @@ $arrayofparameters = array(
 
 	'MMI_RECEPTION'=>array('type'=>'separator','enabled'=>1),
 	'MMI_RECEPTION_SENDER_ADDRESS'=>array('type'=>'yesno', 'enabled'=>1),
+
+	'STOCK_DISPLAY_WARN_IN_SHIPMENT_ENHANCED'=>array('type'=>'yesno', 'enabled'=>1),
+	'STOCK_DISPLAY_WARN_IN_SHIPMENT_ONLY_NEEDED'=>array('type'=>'yesno', 'enabled'=>1),
 );
 
 require_once('../../mmicommon/admin/mmisetup_1.inc.php');
