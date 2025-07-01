@@ -26,7 +26,6 @@ ModuleMMIShippingDesc = Champs supplémentaires, Réceptions/expédition auto po
 # Admin page
 #
 MMIShippingSetup = MMIShipping setup
-Settings = Settings
 MMIShippingSetupPage = MMIShipping setup page
 MMI_SHIPPING = Expéditions
 MMISHIPPING_DF = Gestion auto réceptions/expéditions contremarques
@@ -41,7 +40,6 @@ SHIPPING_PDF_HIDE_VOLUME = Masquer les volumes (conserver les poids) dans les ex
 #
 # About page
 #
-About = About
 MMIShippingAbout = About MMIShipping
 MMIShippingAboutPage = MMIShipping about page
 
