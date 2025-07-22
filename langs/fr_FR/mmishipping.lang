@@ -37,6 +37,10 @@ STOCK_DISPLAY_WARN_IN_SHIPMENT_ONLY_NEEDED = Masquer les warnings dans les expé
 SHIPPING_PDF_HIDE_WEIGHT_AND_VOLUME = Masquer la colonne "poids et volume" dans les expéditions
 SHIPPING_PDF_HIDE_VOLUME = Masquer les volumes (conserver les poids) dans les expéditions
 
+MMI_SHIPPING_CARRIER = Gestion transporteurs
+MMI_SHIPPING_CARRIER_AUTOCALC = Répercution automatique des frais de port des expéditions sur les commandes
+MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID = ID Produit à analyser/créer/mettre à jour pour les expéditions
+
 #
 # About page
 #
@@ -72,3 +76,7 @@ Extrafield_fk_adresse = Client réception
 ExtrafieldToolTip_fk_adresse = Adresse client où doit être livrée directement la marchandise (cas d'une contremarque)
 Extrafield_commande_fournisseur_fk_entrepot = Entrepôt réception
 ExtrafieldTooltip_commande_fournisseur_fk_entrepot = Entrepôt de réception de la marchandise, lorsque tout est reçu dans le même entrepôt de la société
+Extrafield_total_real_price = Prix facturé transporteur
+Extrafield_real_weight = Poids mesuré transporteur
+Extrafield_carrier_metadata = Métadonnées transporteur
+Extrafield_carrier_invoice_updated = Données de facturation transporteur mises à jour

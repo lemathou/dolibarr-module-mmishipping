@@ -340,8 +340,13 @@ class modMMIShipping extends DolibarrModules
 		$extrafields = new ExtraFields($this->db);
 
 		// Shipping
-		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled || $conf->mmifournisseurprice->enabled');
-		$extrafields->addExtraField('fk_adresse', $langs->trans('Extrafield_fk_adresse'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Contact:contact/class/contact.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'expedition', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled || $conf->mmifournisseurprice->enabled');
+		$extrafields->addExtraField('fk_adresse', $langs->trans('Extrafield_fk_adresse'), 'link', 100, '', 'expedition', 0, 0, '', array('options'=>array('Contact:contact/class/contact.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		// Shipping supplier metadata	
+		$extrafields->addExtraField('total_shipping_real_price', $langs->trans('Extrafield_total_real_price'), 'price', 100, '', 'expedition', 0, 0, '', '', 1, '', -1, $langs->trans('ExtrafieldToolTip_fk_adresse'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		$extrafields->addExtraField('real_weight', $langs->trans('Extrafield_real_weight'), 'double', 100, '10,5', 'expedition', 0, 0, '', '', 1, '', -1, $langs->trans('ExtrafieldToolTip_real_weight'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		$extrafields->addExtraField('carrier_metadata', $langs->trans('Extrafield_carrier_metadata'), 'text', 100, '', 'expedition', 0, 0, '', '', 1, '', -1, $langs->trans('ExtrafieldToolTip_carrier_metadata'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
+		$extrafields->addExtraField('carrier_invoice_updated', $langs->trans('Extrafield_carrier_invoice_updated'), 'boolean', 100, '', 'expedition', 0, 0, '', '', 1, '', -1, $langs->trans('ExtrafieldToolTip_carrier_invoice_updated'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
 
 		// Supplier order
 		$extrafields->addExtraField('fk_entrepot', $langs->trans('Extrafield_fk_entrepot'), 'link', 100, '', 'commande_fournisseur', 0, 0, '', array('options'=>array('Entrepot:product/stock/class/entrepot.class.php'=>null)), 1, '', -1, $langs->trans('ExtrafieldTooltip_fk_entrepot'), '', $conf->entity, 'mmishipping@mmishipping', '$conf->mmishipping->enabled');
