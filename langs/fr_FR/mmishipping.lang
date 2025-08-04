@@ -77,6 +77,7 @@ ExtrafieldToolTip_fk_adresse = Adresse client où doit être livrée directement
 Extrafield_commande_fournisseur_fk_entrepot = Entrepôt réception
 ExtrafieldTooltip_commande_fournisseur_fk_entrepot = Entrepôt de réception de la marchandise, lorsque tout est reçu dans le même entrepôt de la société
 Extrafield_total_real_price = Prix facturé transporteur
+Extrafield_total_expected_price = Prix prévu transporteur
 Extrafield_real_weight = Poids mesuré transporteur
 Extrafield_carrier_metadata = Métadonnées transporteur
 Extrafield_carrier_invoice_updated = Données de facturation transporteur mises à jour
