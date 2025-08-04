@@ -80,3 +80,4 @@ Extrafield_total_real_price = Prix facturé transporteur
 Extrafield_real_weight = Poids mesuré transporteur
 Extrafield_carrier_metadata = Métadonnées transporteur
 Extrafield_carrier_invoice_updated = Données de facturation transporteur mises à jour
+Extrafield_fk_order_line = Ligne de commande relative à l'expédition

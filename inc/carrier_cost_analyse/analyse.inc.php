@@ -123,9 +123,23 @@ foreach ($file_fields as $i=>$field) {
 var_dump($fields_i);
 
 $shipping_product_id = getDolGlobalInt('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID');
+$shipping_product_ids = getDolGlobalString('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_IDS');
+$shipping_product_ids = !empty($shipping_product_ids) ?explode(',', $shipping_product_ids) :[];
+if (!empty($shipping_product_id) && !in_array($shipping_product_id, $shipping_product_ids)) {
+	$shipping_product_ids[] = $shipping_product_id;
+}
 $shipping_product_desc = 'Frais de port';
 $shipping_product_tvatx = 20.0; // TVA 20%
 
+$error = [
+	'noorder' => 0, // No order found
+	'multiorder' => 0, // More than 1 order found
+	'noshipping' => 0, // No shipping found
+	'notshipped' => 0, // Order not shipped
+	'multiexpe' => 0, // More than 1 compatible shipping found for order
+	'shipnotfound' => 0, // fetch shipping error using id 
+	'shiptoomuchinorder' => 0,
+];
 
 $row = 0;
 
@@ -151,17 +165,30 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		.' LEFT JOIN '.MAIN_DB_PREFIX.'element_element AS ee ON (ee.sourcetype="commande" AND ee.fk_source=o.rowid AND ee.targettype="shipping")'
 		.' LEFT JOIN '.MAIN_DB_PREFIX.'expedition AS e ON ee.targettype="shipping" AND e.rowid=ee.fk_target'
 		.' WHERE o2.p_ref = \''.$db->escape($data[$fields_i['ref']]).'\''
+		.'   OR o.ref = \''.$db->escape($data[$fields_i['ref']]).'\''
+		.'   OR e.tracking_number = \''.$db->escape($metadata['num']).'\''
 		.' GROUP BY o.rowid';
 	$resql = $db->query($sql);
-	$infos = $db->fetch_object($resql);
+	$num_rows = $db->num_rows($resql);
 
-	if (!$infos) {
+	if ($num_rows>1) {
+		echo '</div>';
+		echo '<p class="error">Plusieurs commandes trouvées pour ref: '.$data[$fields_i['ref']].'</p>';
+		$error['multiorder']++;
+		$error['multiorder']++;
+		var_dump($metadata);
+		continue;
+	}
+	elseif ($num_rows==0) {
 		echo '</div>';
 		echo '<p class="error">Commande not found for ref: '.$data[$fields_i['ref']].'</p>';
 		$error['noorder']++;
 		var_dump($metadata);
 		continue;
 	}
+
+	$infos = $db->fetch_object($resql);
+
 	//var_dump($commande);
 	// $commande = new Commande($db);
 	// $commande->fetch($infos->rowid);
@@ -183,34 +210,49 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 	}
 
 	$object = new Expedition($db);
+	$expeditions = [];
 	$expedition_ids = explode(',', $infos->expeditions_id);
+	$expedition_id = NULL;
 
-	if (count($expedition_ids)>1) {
+	$error_shipnotfound = false;
+	foreach($expedition_ids as $expe_id) {
+		$expeditions[$expe_id] = new Expedition($db);
+		$expeditions[$expe_id]->fetch($expe_id);
+		if (!$expeditions[$expe_id]->id) {
+			echo '</div>';
+			echo '<p class="error">Expédition not found for id: '.$expe_id.'</p>';
+			$error['shipnotfound']++;
+			$error_shipnotfound = true;
+			var_dump($metadata);
+			break;
+		}
+		if ($expeditions[$expe_id]->tracking_number == $metadata['num']) {
+			$expedition_id = $expe_id;
+			break; // On prend la première trouvée
+		}
+	}
+	if ($error_shipnotfound) {
+		continue;
+	}
+	if (count($expedition_ids)>1 && !$expedition_id) {
 		echo '</div>';
 		echo '<p class="error">Plusieurs expéditions => Ne peux pas calculer (première version de l\'outil)</p>';
 		$error['multiexpe']++;
 		var_dump($metadata);
 		continue;
 	}
-	else {
-		$order_update = true;
-	}
 
-	$expe_ok = true;
-	foreach($expedition_ids as $expedition_id) {
-		if ($expe_ok == false)
-			continue;
-
-		$object->fetch($expedition_id);
-		if (!$object->id) {
-			$expe_ok = false;
-			echo '</div>';
-			echo '<p class="error">Expédition not found for id: '.$expedition_id.'</p>';
-			$error['shipnotfound']++;
-			var_dump($metadata);
-			continue;
+	foreach($expeditions as $expe_id=>$expedition) {
+		if ($expedition_id) {
+			if ($expe_id != $expedition_id) {
+				continue; // On ne traite que l'expédition trouvée
+			}
+			else {
+				$object = $expeditions[$expe_id];
+			}
 		}
 
+		//var_dump($expedition);
 		$price = 0;
 		foreach(['shipping_price', 'surete_price', 'multicolis_price', 'urbaine_price', 'souffrance_price'] as $i) {
 			$metadata[$i] = trim(str_replace(',', '.', $metadata[$i]));
@@ -226,55 +268,17 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		$object->array_options['options_total_shipping_real_price'] = (float) str_replace(',', '.', $price);
 		$object->array_options['options_real_weight'] = (float) str_replace(',', '.', $metadata['weight']);
 		$object->array_options['options_carrier_metadata'] = json_encode($metadata);
-		$object->array_options['options_carrier_invoice_updated'] = 1;
+		//$object->array_options['options_carrier_invoice_updated'] = 1;
 		
 		$res = $object->update($user);
 		$res2 =  $object->insertExtraFields();
 		//var_dump($object->array_options, $res, $res2);
-	}
 
-	// Mise à jour commande
-	if ($order_update) {
-		$order = new Commande($db);
-		$order->fetch($infos->rowid);
-
-		$found=0;
-		foreach($order->lines as $line) {
-			if ($line->fk_product == $shipping_product_id) {
-				$found++;
-			}
-		}
-		// None => create one
-		if ($found==0) {
-			$order_status = $order->statut;
-			$order->statut = Commande::STATUS_DRAFT; // Draftify order
-			$order->addline('Transport offert', 0, 1, $shipping_product_tvatx, 0, 0, $shipping_product_id, 0, 0, 0, 'HT', 0, '', '', 1, -1, 0, 0, null, $price, $shipping_product_desc);
-			$order->statut = $order_status; // UnDraftify order
-			$order->update($user);
-			$msgs[] = 'Created shipping line for order '.$order->ref.' with price '.$line->pa_ht;
-		}
-		// At least 2 => by-pass
-		elseif ($found>1) {
-			echo '</div>';
-			echo '<p class="error">Order with too many shipments for expe_id: '.$expedition_id.'</p>';
-			$error['shiptoomuchinorder']++;
-			var_dump($metadata);
-			continue;
-		}
-		// One => Update
-		else {
-			foreach($order->lines as $line) {
-				if ($line->fk_product == $shipping_product_id) {
-					// Mise à jour de la ligne de transport
-					$line->pa_ht = (float) $price;
-					$msgs[] = 'Update line '.$line->id.' for order '.$order->ref.' with price '.$line->pa_ht;
-					$line->update($user);
-				}
-			}
-		}
+		// Updated one expedition, finished
+		break;
 	}
-	if ($expe_ok != false)
-		echo '</div>';
+	
+	echo '</div>';
 
 	foreach($msgs as $msg) {
 		echo '<p class="ok">'.$msg.'</p>';
