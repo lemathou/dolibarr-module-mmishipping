@@ -1,15 +1,14 @@
 <?php
 
-// Protection to avoid direct call of template
-if (empty($conf) || !is_object($conf)) {
-	print "Error, template page can't be called as URL";
-	exit;
-}
+// Protection to avoid direct call of file
+if (!defined('DOL_VERSION'))
+	die('Dolibarr must be loaded');
 
 $carrier_name = '';
 
 ?>
 <form method="GET">
+<input type="hidden" name="action" value="list" />
 	<p>
 		<label for="carrier_name">Sélectionner un transporteur :</label>
 		<select name="carrier_name">
@@ -22,10 +21,6 @@ $carrier_name = '';
 		<select>
 	</p>
 	<p>
-		<label for="file">Choisir le fichier CSV à uploader :</label>
-		<input name="file" type="file" accept=".csv" />
-	</p>
-	<p>
-		<input type="submit" value="Analyser" />
+		<input type="submit" value="Choisir le transporteur" />
 	</p>
 </form>

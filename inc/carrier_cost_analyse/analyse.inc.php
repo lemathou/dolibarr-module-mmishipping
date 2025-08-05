@@ -1,16 +1,18 @@
 <?php
 
-// Protection to avoid direct call of template
-if (empty($conf) || !is_object($conf)) {
-	print "Error, template page can't be called as URL";
-	exit;
-}
+// Protection to avoid direct call of file
+if (!defined('DOL_VERSION'))
+	die('Dolibarr must be loaded');
 
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/expedition/class/expedition.class.php';
 
-$filename = $foldername.'/'.$carrier_name.'.csv';
-
+$file = GETPOST('file');
+if (!preg_match('/^[0-9]+\.csv$/', $file)) {
+	echo '<p class="error">Invalid filename: '.$file.'</p>';
+	exit;
+};
+$filename = $foldername.'/'.$carrier_name.'/'.$file;
 if (!file_exists($filename)) {
 	echo '<p class="error">File not found: '.$filename.'</p>';
 	exit;
