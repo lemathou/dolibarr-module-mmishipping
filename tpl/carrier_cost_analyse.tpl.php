@@ -16,11 +16,12 @@
  */
 
 /**
- *	\file       mmishipping/csv_analyse.php
+ *	\file       mmishipping/carrier_cost_analyse.php
  *	\ingroup    mmishipping
  *	\brief      Analyse shippings CSV file from supplier and record cost prices
  */
 
+echo '<h2><a href="?action=form">Import et Analyse CSV facturation transporteur</a></h2>';
 
 $actions = array('list', 'save', 'analyse', 'delete');
 $action = GETPOST('action', 'aZ09');

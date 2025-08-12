@@ -4,8 +4,6 @@
 if (!defined('DOL_VERSION'))
 	die('Dolibarr must be loaded');
 
-$carrier_name = '';
-
 ?>
 <form method="GET">
 <input type="hidden" name="action" value="list" />

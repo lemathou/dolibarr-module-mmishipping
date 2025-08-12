@@ -7,20 +7,69 @@ if (!defined('DOL_VERSION'))
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/expedition/class/expedition.class.php';
 
-$file = GETPOST('file');
-if (!preg_match('/^[0-9]+\.csv$/', $file)) {
-	echo '<p class="error">Invalid filename: '.$file.'</p>';
+$error_explain = [
+	'noorder' => 'Aucune commande trouvée pour la référence',
+	'multiorder' => 'Plusieurs commandes trouvées pour la référence',
+	'noshippings' => 'Pas d\'expédition trouvée pour la commande',
+	'notshipped' => 'La commande n\'est pas livrée',
+	'multiexpe' => 'Plusieurs expéditions trouvées pour le numéro de suivi',
+	'shipnotfound' => 'Expédition non trouvée pour l\'id',
+	'shiptoomuchinorder' => 'Trop d\'expéditions dans la commande'
+];
+
+function metadata_dump($metadata=[])
+{
+	echo '<table border="1">'
+		.'<tr>';
+	foreach(array_keys($metadata) as $key) {
+		echo '<td>'.$key.'</td>';
+	}
+	echo '</tr>'
+		.'<tr>';
+	foreach($metadata as $value) {
+		echo '<td>'.$value.'</td>';
+	}
+	echo '</tr>'
+		.'</table>';
+}
+function metadata_list_dump($metadata_list=[])
+{
+	global $error_explain;
+	echo '<table border="1">';
+	foreach($metadata_list as $info) {
+		if (!isset($header)) {
+			echo '<tr>';
+			echo '<th>Raison</th>';
+			foreach(array_keys($info['metadata']) as $key) {
+				echo '<th>'.$key.'</th>';
+			}
+			$header = true;
+			echo '</tr>';
+		}
+		echo '<tr>';
+		echo '<td>'.$error_explain[$info['error']].'</td>';
+		foreach($info['metadata'] as $value) {
+			echo '<td>'.$value.'</td>';
+		}
+	}
+	echo '</tr>'
+		.'</table>';
+}
+
+echo "<h3>Analyse CSV file</h3>\n";
+
+if (empty($filename)) {
+	echo '<p class="error">Filename not provided.</p>';
 	exit;
-};
-$filename = $foldername.'/'.$carrier_name.'/'.$file;
+}
+echo '<p>CSV file: '.$filename.'</p>';
+$filename = $foldername.'/'.$carrier_name.'/'.$filename;
 if (!file_exists($filename)) {
 	echo '<p class="error">File not found: '.$filename.'</p>';
 	exit;
 }
 
-
-echo "<h1>Analyse CSV file</h1>\n";
-echo '<p>CSV file: '.$filename.'</p>';
+$debug = [];
 
 $fp = fopen($filename, 'r');
 
@@ -32,7 +81,7 @@ if (($file_fields = fgetcsv($fp, 1000, ";")) === FALSE) {
 	echo '<pEmpty file: '.$filename.'</p>';
 	exit;
 }
-var_dump($file_fields);
+$debug[] = $file_fields;
 
 $fields = [
 	'num' => [
@@ -122,7 +171,7 @@ foreach ($file_fields as $i=>$field) {
 		}
 	}
 }
-var_dump($fields_i);
+$debug[] = $fields_i;
 
 $shipping_product_id = getDolGlobalInt('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID');
 $shipping_product_ids = getDolGlobalString('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_IDS');
@@ -177,15 +226,16 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		echo '</div>';
 		echo '<p class="error">Plusieurs commandes trouvées pour ref: '.$data[$fields_i['ref']].'</p>';
 		$error['multiorder']++;
-		$error['multiorder']++;
-		var_dump($metadata);
+		metadata_dump($metadata);
+		$debug_metadata[] = ['error'=>'multiorder', 'metadata'=>$metadata];
 		continue;
 	}
 	elseif ($num_rows==0) {
 		echo '</div>';
 		echo '<p class="error">Commande not found for ref: '.$data[$fields_i['ref']].'</p>';
 		$error['noorder']++;
-		var_dump($metadata);
+		metadata_dump($metadata);
+		$debug_metadata[] = ['error'=>'noorder', 'metadata'=>$metadata];
 		continue;
 	}
 
@@ -199,7 +249,8 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		echo '</div>';
 		echo '<p class="error">Pas d\'expédition...</p>';
 		$error['noshippings']++;
-		var_dump($metadata);
+		metadata_dump($metadata);
+		$debug_metadata[] = ['error'=>'noshippings', 'metadata'=>$metadata];
 		continue;
 	}
 
@@ -207,7 +258,8 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		echo '</div>';
 		echo '<p class="error">Statut de commande non livré</p>';
 		$error['notshipped']++;
-		var_dump($metadata);
+		metadata_dump($metadata);
+		$debug_metadata[] = ['error'=>'notshipped', 'metadata'=>$metadata];
 		continue;
 	}
 
@@ -225,7 +277,8 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 			echo '<p class="error">Expédition not found for id: '.$expe_id.'</p>';
 			$error['shipnotfound']++;
 			$error_shipnotfound = true;
-			var_dump($metadata);
+			metadata_dump($metadata);
+			$debug_metadata[] = ['error'=>'shipnotfound', 'metadata'=>$metadata];
 			break;
 		}
 		if ($expeditions[$expe_id]->tracking_number == $metadata['num']) {
@@ -240,7 +293,8 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		echo '</div>';
 		echo '<p class="error">Plusieurs expéditions => Ne peux pas calculer (première version de l\'outil)</p>';
 		$error['multiexpe']++;
-		var_dump($metadata);
+		metadata_dump($metadata);
+		$debug_metadata[] = ['error'=>'multiexpe', 'metadata'=>$metadata];
 		continue;
 	}
 
@@ -289,6 +343,10 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 
 echo '<hr />';
 echo '<h3 class="ok">Analyse terminée</h3>';
+if (!empty($debug_metadata)) {
+	echo '<h4>Expéditions en anomalie</h4>';
+	metadata_list_dump($debug_metadata);
+}
 echo '<p class="error">Errors :</p>';
 foreach($error as $i=>$j)
 	echo '<p>'.$i.' : '.$j.'</p>';
