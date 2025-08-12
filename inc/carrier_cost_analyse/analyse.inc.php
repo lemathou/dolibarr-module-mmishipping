@@ -211,6 +211,9 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 	}
 
 	// Recherche expédition... Attention si plusieurs !
+	// Modèle pour Skipper
+	// Le champ num correspond au numéro de suivi, ref à la réf que nous fournissions,
+	//   mais parfois num est vide et c'est ref qui tient ce role...
 	$sql = 'SELECT o2.*, o.*, GROUP_CONCAT(e.rowid SEPARATOR ",") AS expeditions_id'
 		.' FROM '.MAIN_DB_PREFIX.'commande AS o'
 		.' INNER JOIN '.MAIN_DB_PREFIX.'commande_extrafields AS o2 ON o2.fk_object = o.rowid'
@@ -218,7 +221,7 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		.' LEFT JOIN '.MAIN_DB_PREFIX.'expedition AS e ON ee.targettype="shipping" AND e.rowid=ee.fk_target'
 		.' WHERE o2.p_ref = \''.$db->escape($data[$fields_i['ref']]).'\''
 		.'   OR o.ref = \''.$db->escape($data[$fields_i['ref']]).'\''
-		.'   OR e.tracking_number = \''.$db->escape($metadata['num']).'\''
+		.'   OR e.tracking_number = \''.($metadata['num'] ?$db->escape($metadata['num']) :$db->escape($metadata['ref'])).'\''
 		.' GROUP BY o.rowid';
 	$resql = $db->query($sql);
 	$num_rows = $db->num_rows($resql);
