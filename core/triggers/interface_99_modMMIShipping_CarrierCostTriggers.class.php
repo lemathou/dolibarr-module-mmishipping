@@ -121,9 +121,9 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 			case 'SHIPMENT_MODIFY':
 			case 'SHIPPING_MODIFY':
 				// @todo pas très précis comme test ...
-				if (is_numeric($object->array_options['options_total_shipping_real_price'])) {
+				if (isset($object->array_options['options_total_shipping_real_price']) && is_numeric($object->array_options['options_total_shipping_real_price'])) {
 					$price = (float) $object->array_options['options_total_shipping_real_price'];
-					$commande_line_id = (int) $object->array_options['options_fk_order_line'];
+					$commande_line_id = isset($object->array_options['options_fk_order_line']) ?(int)$object->array_options['options_fk_order_line'] :NULL;
 
 					$object_update = false;
 
@@ -154,7 +154,20 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 						$shipping_product_desc = 'Frais de port';
 						$shipping_product_tvatx = 20.0; // TVA 20%
 
+						$error_list = [
+							'noorder' => 'Aucune commande trouvée pour la référence',
+							'multiorder' => 'Plusieurs commandes trouvées pour la référence',
+							'noshippings' => 'Pas d\'expédition trouvée pour la commande',
+							'notshipped' => 'La commande n\'est pas livrée',
+							'multiexpe' => 'Plusieurs expéditions trouvées pour le numéro de suivi',
+							'shipnotfound' => 'Expédition non trouvée pour l\'id',
+							'shiptoomuchinorder' => 'Trop d\'expéditions dans la commande',
+							'addshiplineerror' => 'Erreur lors de l\'ajout de la ligne de transport',
+						];
 						$error = [];
+						foreach($error_list as $k => $v) {
+							$error[$k] = 0;
+						}
 						$msgs = [];
 
 						$found=0;
@@ -177,17 +190,17 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 								$object->array_options['options_fk_order_line'] = $order->line->id;
 								$object->array_options['options_carrier_invoice_updated'] = 1;
 								$object_update = true;
-								$msgs[] = 'Created shipping line for order '.$order->ref.' with price '.$line->pa_ht;
+								$msgs[] = 'Created shipping line for order '.$order->ref.' with price '.$price;
 							}
 							else {
 								$error['addshiplineerror']++;
-								$msgs[] = 'Error creating shipping line for order '.$order->ref.' with price '.$line->pa_ht;
+								$msgs[] = 'Error creating shipping line for order '.$order->ref.' with price '.$price;
 							}
 						}
 						// At least 2 => by-pass
 						elseif ($found>1) {
 							$error['shiptoomuchinorder']++;
-							$msgs[] = 'Too many shippings for order '.$order->ref.' with price '.$line->pa_ht;
+							$msgs[] = 'Too many shippings for order '.$order->ref;
 							continue;
 						}
 						// One => Update
@@ -196,7 +209,7 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 								if (in_array($line->fk_product, $shipping_product_ids)) {
 									// Mise à jour de la ligne de transport
 									$line->pa_ht = (float) $price;
-									$msgs[] = 'Update line '.$line->id.' for order '.$order->ref.' with price '.$line->pa_ht;
+									$msgs[] = 'Update line '.$line->id.' for order '.$order->ref.' with price '.$price;
 									$line->update($user);
 									$object->array_options['options_fk_order_line'] = $line->id;
 									$object->array_options['options_carrier_invoice_updated'] = 1;

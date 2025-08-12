@@ -7,7 +7,7 @@ if (!defined('DOL_VERSION'))
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/expedition/class/expedition.class.php';
 
-$error_explain = [
+$error_list = [
 	'noorder' => 'Aucune commande trouvée pour la référence',
 	'multiorder' => 'Plusieurs commandes trouvées pour la référence',
 	'noshippings' => 'Pas d\'expédition trouvée pour la commande',
@@ -34,7 +34,7 @@ function metadata_dump($metadata=[])
 }
 function metadata_list_dump($metadata_list=[])
 {
-	global $error_explain;
+	global $error_list;
 	echo '<table border="1">';
 	foreach($metadata_list as $info) {
 		if (!isset($header)) {
@@ -47,7 +47,7 @@ function metadata_list_dump($metadata_list=[])
 			echo '</tr>';
 		}
 		echo '<tr>';
-		echo '<td>'.$error_explain[$info['error']].'</td>';
+		echo '<td>'.$error_list[$info['error']].'</td>';
 		foreach($info['metadata'] as $value) {
 			echo '<td>'.$value.'</td>';
 		}
