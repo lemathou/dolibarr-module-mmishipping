@@ -139,6 +139,9 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 					else {
 
 						/** @var Expedition $object */
+						// @todo : WTF why is this not defined sometimes ?
+						if (!$object->origin)
+							$object->origin = 'commande';
 						$object->fetch_origin();
 						$order = $object->commande;
 
