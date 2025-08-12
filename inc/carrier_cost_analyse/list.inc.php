@@ -32,7 +32,7 @@ while($f = readdir($fp)) {
 	if ($f == '.' || $f == '..') continue;
 	if (is_dir($carrier_foldername.'/'.$f)) continue;
 	$filename = $carrier_foldername.'/'.$f;
-	$fe = explode('-', substr($filename, 0, -4));
+	$fe = explode('-', substr($f, 0, -4));
 	$filelist[] = [
 		'filename' => $f,
 		'linecount' => $fe[1],

@@ -56,7 +56,8 @@ function metadata_list_dump($metadata_list=[])
 		.'</table>';
 }
 
-echo "<h3>Analyse CSV file</h3>\n";
+echo '<h3><a href="?action=list&carrier_name='.$carrier_name.'">Transporteur : '.$carrier_name.'</a></h3>';
+echo "<h4>Analyse CSV file</h4>\n";
 
 if (empty($filename)) {
 	echo '<p class="error">Filename not provided.</p>';
