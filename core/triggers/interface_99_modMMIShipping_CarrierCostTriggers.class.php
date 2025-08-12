@@ -201,7 +201,7 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 						elseif ($found>1) {
 							$error['shiptoomuchinorder']++;
 							$msgs[] = 'Too many shippings for order '.$order->ref;
-							continue;
+							break;
 						}
 						// One => Update
 						else {

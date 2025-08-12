@@ -299,14 +299,24 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		continue;
 	}
 
+	$expedition_found = false;
 	foreach($expeditions as $expe_id=>$expedition) {
+		if ($expedition_found)
+			continue; // On ne traite qu'une expédition
+		// Expédition spécifique
 		if ($expedition_id) {
 			if ($expe_id != $expedition_id) {
 				continue; // On ne traite que l'expédition trouvée
 			}
 			else {
 				$object = $expeditions[$expe_id];
+				$expedition_found = true;
 			}
+		}
+		// Première qui vient
+		else {
+			$object = $expedition;
+			$expedition_found = true;
 		}
 
 		//var_dump($expedition);
