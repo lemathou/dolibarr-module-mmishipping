@@ -118,6 +118,23 @@ $fields = [
 		'label'=>'National',
 		'values'=>['National/ International']
 	],
+	// Customer
+	'customer_name' => [
+		'label'=>'Client Nom',
+		'values'=>['Nom Destinataire']
+	],
+	'customer_zip' => [
+		'label'=>'Client CP',
+		'values'=>['Code postal']
+	],
+	'customer_city' => [
+		'label'=>'Client Ville',
+		'values'=>['Ville']
+	],
+	'customer_country' => [
+		'label'=>'Client Pays',
+		'values'=>['PaysDest']
+	],
 	// Prices
 	'shipping_price' =>  [
 		'label'=>'Mt transport',
