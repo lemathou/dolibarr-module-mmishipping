@@ -27,9 +27,12 @@ ModuleMMIShippingDesc = Champs supplémentaires, Réceptions/expédition auto po
 #
 MMIShippingSetup = MMIShipping setup
 MMIShippingSetupPage = MMIShipping setup page
+
 MMI_SHIPPING = Expéditions
 MMISHIPPING_DF = Gestion auto réceptions/expéditions contremarques
 MMISHIPPING_DF_ENTREPOT = Entrepôt "virtuel" pour la livraison directe (réception/expédition)
+MMI_SHIPPING_PREPA_MULTI = Bon de prépa pour plusieurs expéditions
+
 MMI_RECEPTION = Réceptions
 MMI_RECEPTION_SENDER_ADDRESS = Affichage de l'adresse du dépît ou du contact selon le type de réception
 STOCK_DISPLAY_WARN_IN_SHIPMENT_ENHANCED = Afficher les warnings dans les expé de façon plus lisible
@@ -66,6 +69,7 @@ MMIShippingAssignAddress = Assigner client réception
 MMIShippingAssignAddresses = Assigner clients réception
 MMIShippingSupplierOrderReceiveAndSend = Classer la réception
 MMIShippingSupplierOrdersReceiveAndSend = Créer les réceptions & expéditions
+MMIShippingPreparationSlip = Bon de préparation pour expéditions multiples
 
 #
 # Extrafields

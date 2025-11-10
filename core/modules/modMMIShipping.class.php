@@ -72,7 +72,7 @@ class modMMIShipping extends DolibarrModules
 		$this->editor_url = 'https://iprospective.fr';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '1.0';
+		$this->version = '1.1';
 		// Url to the file with your last numberversion of this module
 		//$this->url_last_version = 'http://www.example.com/versionmodule.txt';
 
@@ -118,6 +118,7 @@ class modMMIShipping extends DolibarrModules
 				'ordersuppliercard',
 				'supplierorderlist',
 				'receptiondao',
+				'shipmentlist',
 				//   'data' => array(
 				//       'hookcontext1',
 				//       'hookcontext2',

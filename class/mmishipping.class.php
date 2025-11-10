@@ -1,6 +1,7 @@
 <?php
 
 require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/stock/class/entrepot.class.php';
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
@@ -525,6 +526,99 @@ class mmishipping
 			return 0;
 		else
 			return -1;
+	}
+
+	/**
+	 * @todo : gérer les entrepôts
+	 * Génère une fiche de préparation pour une liste d'expéditions passée en paramètre
+	 */
+	public static function preparationslipmulti($list)
+	{
+		global $conf, $db, $langs;
+
+		$table = [];
+		$expeditionstatic = new Expedition($db);
+		$productstatic = new Product($db);
+
+		$eatby = $sellby = false;
+
+		//var_dump($list);
+		foreach($list as $id) {
+			$expeditionstatic->fetch($id);
+			if (!empty($expeditionstatic->id)) {
+				// Traitement des lignes
+				foreach($expeditionstatic->lines as $line) {
+					if (!isset($table[$line->fk_product])) {
+						$productstatic->fetch($line->fk_product);
+						$table[$line->fk_product] = [
+							'ref'=>$productstatic->ref,
+							'label'=>$productstatic->label,
+							'qty'=>0,
+							'batch'=>[],
+						];
+						//var_dump($table);
+					}
+					//var_dump($line->id, $line->qty, $line->qty_shipped, $line->fk_product);
+					// Batch
+					if (!empty($line->detail_batch)) {
+						foreach($line->detail_batch as $dbatch) {
+							if ($eatby === false && !empty($dbatch->eatby))
+								$eatby = true;
+							if ($sellby === false && !empty($dbatch->sellby))
+								$sellby = true;
+							//var_dump('----', $dbatch->sellby, $dbatch->eatby, $dbatch->batch, $dbatch->qty);
+							if (!isset($table[$line->fk_product]['batch'][$dbatch->batch])) {
+								$table[$line->fk_product]['batch'][$dbatch->batch] = [
+									'qty'=>0,
+									'sellby'=>$dbatch->sellby,
+									'eatby'=>$dbatch->eatby,
+								];
+							}
+							$table[$line->fk_product]['batch'][$dbatch->batch]['qty'] += $dbatch->qty;
+							$table[$line->fk_product]['qty'] += $dbatch->qty;
+						}
+					}
+					// No batch
+					else {
+						$table[$line->fk_product]['qty'] += $line->qty;
+					}
+					//echo '<hr />';
+				}
+			}
+		}
+		//var_dump($table); die();
+		echo '<h1>Bordereau de picking multi-expé</h1>';
+		echo '<table border="1">';
+		echo '<thead><tr>';
+		echo '<th>Ref</th><th>Label</th>';
+		if ($eatby || $sellby)
+			echo '<th colspan="2">Batch details</th>';
+		else
+			echo '<th colspan="2"> </th>';
+		echo '<th>Qty</th>';
+		echo '</tr></thead>';
+		echo '<tbody>';
+		foreach($table as $product_id=>$prodinfo) {
+			echo '<tr>';
+			echo '<td>'.$prodinfo['ref'].'</td>';
+			echo '<td>'.$prodinfo['label'].'</td>';
+			echo '<td colspan="2" align="right">TOTAL :</td>';
+			echo '<td align="right">'.$prodinfo['qty'].'</td>';
+			echo '</tr>';
+			if (!empty($prodinfo['batch'])) {
+				foreach($prodinfo['batch'] as $batch=>$batchinfo) {
+					echo '<tr>';
+					echo '<td colspan="2"></td>';
+					echo '<td>'.$batch.'</td>';
+					echo '<td>'.date('Y-m-d', $batchinfo['sellby'] ?$batchinfo['sellby'] :$batchinfo['eatby']).'</td>';
+					echo '<td align="right">'.$batchinfo['qty'].'</td>';
+					echo '</tr>';
+				}
+			}
+		}
+		echo '</tbody>';
+		echo '</table>';
+		die();
 	}
 }
 

@@ -33,6 +33,7 @@ $arrayofparameters = array(
 	'MMISHIPPING_DF_ENTREPOT'=>array('type'=>'int', 'enabled'=>1),
 	'SHIPPING_PDF_HIDE_WEIGHT_AND_VOLUME'=>array('type'=>'yesno', 'enabled'=>1),
 	'SHIPPING_PDF_HIDE_VOLUME'=>array('type'=>'yesno','enabled'=>1),
+	'MMI_SHIPPING_PREPA_MULTI'=>array('type'=>'yesno','enabled'=>1),
 
 	'MMI_RECEPTION'=>array('type'=>'separator','enabled'=>1),
 	'MMI_RECEPTION_SENDER_ADDRESS'=>array('type'=>'yesno', 'enabled'=>1),

@@ -129,7 +129,7 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		//var_dump(__CLASS__, get_called_class(), static::MOD_NAME, $lang);
 		//$langs->load('mmishipping@mmishipping');
 
-		if ($this->in_context($parameters, 'supplierorderlist') && !empty($conf->global->MMISHIPPING_DF))
+		if ($this->in_context($parameters, 'supplierorderlist') && getDolGlobalInt('MMISHIPPING_DF'))
 		{
 			//var_dump($parameters);
 			//$this->results = [];
@@ -139,10 +139,15 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 				$print .= '<option value="receive_and_send">'.img_picto('', 'supplier', 'class="pictofixedwidth"').$langs->trans("MMIShippingSupplierOrdersReceiveAndSend").'</option>';
 			//var_dump($print);
 		}
+		elseif ($this->in_context($parameters, 'shipmentlist') && getDolGlobalInt('MMI_SHIPPING_PREPA_MULTI'))
+		{
+			//var_dump($parameters);
+			//$this->results = [];
+			$print .= '<option value="preparationslip">'.img_picto('', 'file-pdf', 'class="pictofixedwidth"').$langs->trans("MMIShippingPreparationSlip").'</option>';
+		}
 
 		if (! $error)
 		{
-			$this->results = array('myreturn' => $myvalue);
 			$this->resprints = $print;
 			return 0; // or return 1 to replace standard code
 		}
@@ -184,9 +189,9 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 				}
 			}
 		}
-		if ($this->in_context($parameters, 'supplierorderlist')
+		elseif ($this->in_context($parameters, 'supplierorderlist')
 			&& $massaction=='adresse_assign_auto'
-			&& !empty($conf->global->MMISHIPPING_DF)
+			&& getDolGlobalInt('MMISHIPPING_DF')
 			&& !empty($user->rights->mmishipping->df->affect))
 		{
 			foreach($parameters['toselect'] as $id) {
@@ -201,10 +206,15 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			}
 			//die('adresse_assign_auto');
 		}
+		elseif ($this->in_context($parameters, 'shipmentlist')
+			&& $massaction=='preparationslip'
+			&& getDolGlobalInt('MMI_SHIPPING_PREPA_MULTI'))
+		{
+			mmishipping::preparationslipmulti($parameters['toselect']);
+		}
 
 		if (! $error)
 		{
-			$this->results = array('myreturn' => $myvalue);
 			$this->resprints = $print;
 			return 0; // or return 1 to replace standard code
 		}
