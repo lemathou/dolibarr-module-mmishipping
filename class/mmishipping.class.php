@@ -5,6 +5,7 @@ require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT.'/product/stock/class/entrepot.class.php';
 require_once DOL_DOCUMENT_ROOT.'/societe/class/societe.class.php';
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
+require_once DOL_DOCUMENT_ROOT.'/compta/facture/class/facture.class.php';
 require_once DOL_DOCUMENT_ROOT.'/expedition/class/expedition.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.commande.dispatch.class.php';
@@ -619,6 +620,223 @@ class mmishipping
 		echo '</tbody>';
 		echo '</table>';
 		die();
+	}
+
+	/**
+	 * Ids des produits "port" configurés (MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID + _IDS)
+	 *
+	 * @return int[]
+	 */
+	public static function shipping_product_ids()
+	{
+		$shipping_product_id = getDolGlobalInt('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID');
+		$shipping_product_ids = getDolGlobalString('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_IDS');
+		$shipping_product_ids = !empty($shipping_product_ids) ?explode(',', $shipping_product_ids) :[];
+		// Const principale en tête : c'est elle qui sert de produit par défaut à la création
+		if (!empty($shipping_product_id)) {
+			$shipping_product_ids = array_diff($shipping_product_ids, [$shipping_product_id]);
+			array_unshift($shipping_product_ids, $shipping_product_id);
+		}
+		return $shipping_product_ids;
+	}
+
+	/**
+	 * Ligne de port d'une commande ou facture (produits port configurés)
+	 *
+	 * @param Commande|Facture $object objet avec lines chargées
+	 * @return array [ligne|null, nb de lignes port trouvées]
+	 */
+	public static function object_shipping_line($object)
+	{
+		$found = null;
+		$count = 0;
+		$ids = static::shipping_product_ids();
+		foreach($object->lines as $line) {
+			if (in_array($line->fk_product, $ids)) {
+				$count++;
+				if (!$found)
+					$found = $line;
+			}
+		}
+		return [$found, $count];
+	}
+
+	/**
+	 * Crée ou met à jour la ligne de port d'une commande, quel que soit son statut (RM2381).
+	 *
+	 * addline/updateline sont verrouillés sur le statut brouillon : on flippe le statut
+	 * EN MÉMOIRE seulement (jamais écrit en base), ce qui évite de re-déclencher les
+	 * automatismes de (dé)validation. La qty de la ligne n'est jamais modifiée (aucun
+	 * impact expédition : ligne de service).
+	 *
+	 * @param User     $user
+	 * @param Commande $order    commande avec lines chargées
+	 * @param float|null $subprice PU vente HT (null = inchangé)
+	 * @param float|null $pa_ht    prix d'achat HT (null = inchangé)
+	 * @param string   $desc     description si création de la ligne
+	 * @param float    $tva_tx   TVA si création de la ligne
+	 * @return int id de la ligne si OK, <0 si KO (static::$errors)
+	 */
+	public static function order_shipping_line_set(User $user, Commande $order, $subprice=null, $pa_ht=null, $desc='Frais de port', $tva_tx=20.0)
+	{
+		global $db;
+
+		static::$error = 0;
+		static::$errors = [];
+
+		$shipping_product_ids = static::shipping_product_ids();
+		if (empty($shipping_product_ids)) {
+			static::$error = -1;
+			static::$errors[] = 'No shipping product configured (MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID)';
+			return -1;
+		}
+
+		list($line, $count) = static::object_shipping_line($order);
+
+		// Plusieurs lignes port : ambigu, on ne devine pas
+		if ($count > 1) {
+			static::$error = -2;
+			static::$errors[] = 'Too many shipping lines ('.$count.') for order '.$order->ref;
+			return -2;
+		}
+
+		// Ligne existante, changement de pa_ht seul : update direct (pas de garde brouillon, pas de recalcul nécessaire)
+		if ($line && $subprice === null) {
+			if ($pa_ht === null)
+				return $line->id;
+			$line->pa_ht = (float) $pa_ht;
+			if ($line->update($user) <= 0) {
+				static::$error = -3;
+				static::$errors[] = 'Error updating pa_ht on line '.$line->id.' of order '.$order->ref;
+				return -3;
+			}
+			return $line->id;
+		}
+
+		$statut = $order->statut;
+		$status = $order->status;
+		$order->statut = Commande::STATUS_DRAFT; // flip mémoire, cf. docblock
+		$order->status = Commande::STATUS_DRAFT;
+
+		if ($line) {
+			$ret = $order->updateline(
+				$line->id, $line->desc, (float) $subprice, $line->qty, $line->remise_percent,
+				$line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits,
+				$line->date_start, $line->date_end, $line->product_type, $line->fk_parent_line, 0,
+				$line->fk_fournprice, ($pa_ht !== null ? (float) $pa_ht : $line->pa_ht), $line->label,
+				$line->special_code, is_array($line->array_options) ?$line->array_options :array(),
+				$line->fk_unit, 0, 0, $line->ref_ext
+			);
+			$line_id = $line->id;
+		}
+		else {
+			$ret = $order->addline(
+				$desc, (float) $subprice, 1, $tva_tx, 0, 0, reset($shipping_product_ids), 0, 0, 0,
+				'HT', 0, '', '', 1, -1, 0, 0, null, ($pa_ht !== null ? (float) $pa_ht : 0), 'Frais de port'
+			);
+			$line_id = $ret > 0 ?$ret :0;
+		}
+
+		$order->statut = $statut;
+		$order->status = $status;
+
+		if ($ret <= 0) {
+			static::$error = -4;
+			static::$errors[] = 'Error '.($line ?'updating' :'adding').' shipping line for order '.$order->ref.' : '.$order->error;
+			return -4;
+		}
+
+		return $line_id;
+	}
+
+	/**
+	 * Crée ou met à jour la ligne de port d'une facture (RM2381).
+	 * Même principe de flip mémoire que order_shipping_line_set().
+	 * Les gardes métier (paiements, compta) sont à la charge de l'appelant.
+	 *
+	 * @return int id de la ligne si OK, <0 si KO (static::$errors)
+	 */
+	public static function invoice_shipping_line_set(User $user, Facture $invoice, $subprice=null, $pa_ht=null, $desc='Frais de port', $tva_tx=20.0)
+	{
+		global $db;
+
+		static::$error = 0;
+		static::$errors = [];
+
+		$shipping_product_ids = static::shipping_product_ids();
+		if (empty($shipping_product_ids)) {
+			static::$error = -1;
+			static::$errors[] = 'No shipping product configured (MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID)';
+			return -1;
+		}
+
+		list($line, $count) = static::object_shipping_line($invoice);
+
+		if ($count > 1) {
+			static::$error = -2;
+			static::$errors[] = 'Too many shipping lines ('.$count.') for invoice '.$invoice->ref;
+			return -2;
+		}
+
+		$statut = $invoice->statut;
+		$status = $invoice->status;
+		$invoice->statut = Facture::STATUS_DRAFT; // flip mémoire, cf. order_shipping_line_set()
+		$invoice->status = Facture::STATUS_DRAFT;
+
+		if ($line) {
+			$ret = $invoice->updateline(
+				$line->id, $line->desc, ($subprice !== null ? (float) $subprice : $line->subprice), $line->qty,
+				$line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx,
+				$line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type,
+				$line->fk_parent_line, 0, $line->fk_fournprice,
+				($pa_ht !== null ? (float) $pa_ht : $line->pa_ht), $line->label, $line->special_code,
+				is_array($line->array_options) ?$line->array_options :array(), 100, $line->fk_unit, 0, 0,
+				$line->ref_ext
+			);
+			$line_id = $line->id;
+		}
+		else {
+			$ret = $invoice->addline(
+				$desc, ($subprice !== null ? (float) $subprice : 0), 1, $tva_tx, 0, 0,
+				reset($shipping_product_ids), 0, '', '', 0, 0, 0, 'HT', 0, 1, -1, 0, '', 0, 0, null,
+				($pa_ht !== null ? (float) $pa_ht : 0), 'Frais de port'
+			);
+			$line_id = $ret > 0 ?$ret :0;
+		}
+
+		$invoice->statut = $statut;
+		$invoice->status = $status;
+
+		if ($ret <= 0) {
+			static::$error = -4;
+			static::$errors[] = 'Error '.($line ?'updating' :'adding').' shipping line for invoice '.$invoice->ref.' : '.$invoice->error;
+			return -4;
+		}
+
+		return $line_id;
+	}
+
+	/**
+	 * La facture peut-elle encore être ajustée ? (RM2381)
+	 * Refusé si paiement enregistré ou écriture en comptabilité.
+	 *
+	 * @return bool
+	 */
+	public static function invoice_adjustable(Facture $invoice)
+	{
+		global $db;
+
+		if ((int) $invoice->type !== Facture::TYPE_STANDARD)
+			return false;
+		if (!in_array((int) $invoice->statut, [Facture::STATUS_DRAFT, Facture::STATUS_VALIDATED]))
+			return false;
+		if ($invoice->getSommePaiement() > 0)
+			return false;
+		$q = $db->query("SELECT rowid FROM ".MAIN_DB_PREFIX."accounting_bookkeeping
+			WHERE doc_type='customer_invoice' AND fk_doc=".((int) $invoice->id)." LIMIT 1");
+		if ($q && $db->num_rows($q))
+			return false;
+		return true;
 	}
 }
 

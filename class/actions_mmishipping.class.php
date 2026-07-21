@@ -55,6 +55,15 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			$commande = mmishipping::order_associated_to_supplier_order($object->id);
 		}
 
+		// Fiche Commande client : édition des frais de port sans repasser en brouillon (RM2381)
+		if ($this->in_context($parameters, 'ordercard') && getDolGlobalString('MMI_SHIPPING_PORT_EDIT')) {
+			if (!empty($user->rights->mmishipping->commande->port_edit) && (int) $object->statut >= Commande::STATUS_VALIDATED) {
+				$langs->load('mmishipping@mmishipping');
+				$link = '?id='.$object->id.'&action=port_edit&token='.newToken();
+				echo "<a class='butAction' href='".$link."'>".$langs->trans("MMIShippingPortEdit")."</a>";
+			}
+		}
+
 		// Fiche Commande
 		if ($this->in_context($parameters, 'ordersuppliercard')) {
 			// Client réception si commande liée
@@ -80,11 +89,123 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		}
 	}
 
+	/**
+	 * Popup de confirmation "Frais de port" sur la fiche commande (RM2381)
+	 */
+	public function formConfirm($parameters, &$object, &$action, $hookmanager)
+	{
+		global $conf, $user, $langs, $db;
+
+		if ($this->in_context($parameters, 'ordercard') && $action === 'port_edit'
+			&& getDolGlobalString('MMI_SHIPPING_PORT_EDIT') && !empty($user->rights->mmishipping->commande->port_edit)) {
+			$langs->load('mmishipping@mmishipping');
+
+			list($line, $count) = mmishipping::object_shipping_line($object);
+			if ($count > 1) {
+				setEventMessages($langs->trans('MMIShippingPortEditTooManyLines', $count), null, 'warnings');
+				return 0;
+			}
+
+			$form = new Form($db);
+			$formquestion = [
+				['type' => 'text', 'name' => 'port_sell_ht', 'label' => $langs->trans('MMIShippingPortEditSellHT'),
+					'value' => $line !== null ?price2num($line->subprice) :''],
+				['type' => 'text', 'name' => 'port_buy_ht', 'label' => $langs->trans('MMIShippingPortEditBuyHT'),
+					'value' => $line !== null ?price2num($line->pa_ht) :''],
+				['type' => 'checkbox', 'name' => 'port_update_invoice', 'label' => $langs->trans('MMIShippingPortEditUpdateInvoice'), 'value' => 1],
+			];
+			$text = $langs->trans($line !== null ?'MMIShippingPortEditConfirmUpdate' :'MMIShippingPortEditConfirmCreate', $object->ref);
+			$this->resprints = $form->formconfirm(
+				$_SERVER['PHP_SELF'].'?id='.$object->id, $langs->trans('MMIShippingPortEdit'),
+				$text, 'confirm_port_edit', $formquestion, 'yes', 1, 260
+			);
+		}
+
+		return 0;
+	}
+
 	function doActions($parameters, &$object, &$action, $hookmanager)
 	{
 		global $conf, $user, $langs, $db;
 
 		$error = 0; // Error counter
+
+		// Édition des frais de port d'une commande client (RM2381)
+		if ($this->in_context($parameters, 'ordercard') && $action == 'confirm_port_edit' && GETPOST('confirm', 'alpha') == 'yes'
+			&& getDolGlobalString('MMI_SHIPPING_PORT_EDIT') && !empty($user->rights->mmishipping->commande->port_edit)) {
+			$langs->load('mmishipping@mmishipping');
+
+			$sell = GETPOST('port_sell_ht', 'alphanohtml');
+			$buy = GETPOST('port_buy_ht', 'alphanohtml');
+			$sell = ($sell !== '' && $sell !== null) ?(float) price2num($sell) :null;
+			$buy = ($buy !== '' && $buy !== null) ?(float) price2num($buy) :null;
+
+			if ($sell === null && $buy === null) {
+				setEventMessages($langs->trans('MMIShippingPortEditNothingToDo'), null, 'warnings');
+			}
+			else {
+				$line_id = mmishipping::order_shipping_line_set($user, $object, $sell, $buy);
+				if ($line_id > 0) {
+					$object->fetch($object->id);
+					$object->fetch_lines();
+
+					// Régénération du PDF de la commande
+					$outputlangs = $langs;
+					$model = $object->model_pdf ?: getDolGlobalString('COMMANDE_ADDON_PDF', 'einstein');
+					$object->generateDocument($model, $outputlangs, 0, 0, 0);
+
+					// Événement agenda de traçabilité
+					require_once DOL_DOCUMENT_ROOT.'/comm/action/class/actioncomm.class.php';
+					$ac = new ActionComm($db);
+					$ac->type_code = 'AC_OTH_AUTO';
+					$ac->code = 'AC_MMISHIPPING_PORT_EDIT';
+					$ac->label = 'Frais de port modifiés sur commande '.$object->ref
+						.($sell !== null ?' (vente '.price($sell).' HT)' :'').($buy !== null ?' (achat '.price($buy).' HT)' :'');
+					$ac->datep = dol_now();
+					$ac->datef = dol_now();
+					$ac->percentage = -1;
+					$ac->socid = $object->socid;
+					$ac->authorid = $user->id;
+					$ac->userownerid = $user->id;
+					$ac->fk_element = $object->id;
+					$ac->elementtype = 'commande';
+					$ac->create($user);
+
+					setEventMessages($langs->trans('MMIShippingPortEditDone', $object->ref), null, 'mesgs');
+
+					// Propagation à la (aux) facture(s) liée(s)
+					if (GETPOST('port_update_invoice', 'alpha')) {
+						$q = $db->query("SELECT fk_target FROM ".MAIN_DB_PREFIX."element_element
+							WHERE fk_source=".((int) $object->id)." AND sourcetype='commande' AND targettype='facture'");
+						while ($q && ($row = $db->fetch_object($q))) {
+							$invoice = new Facture($db);
+							if ($invoice->fetch($row->fk_target) <= 0)
+								continue;
+							$invoice->fetch_lines();
+							if (!mmishipping::invoice_adjustable($invoice)) {
+								setEventMessages($langs->trans('MMIShippingPortEditInvoiceSkipped', $invoice->ref), null, 'warnings');
+								continue;
+							}
+							$inv_line_id = mmishipping::invoice_shipping_line_set($user, $invoice, $sell, $buy);
+							if ($inv_line_id > 0) {
+								$invoice->fetch($invoice->id);
+								$invoice->fetch_lines();
+								$model = $invoice->model_pdf ?: getDolGlobalString('FACTURE_ADDON_PDF', 'sponge');
+								$invoice->generateDocument($model, $outputlangs, 0, 0, 0);
+								setEventMessages($langs->trans('MMIShippingPortEditInvoiceDone', $invoice->ref), null, 'mesgs');
+							}
+							else {
+								setEventMessages($langs->trans('MMIShippingPortEditInvoiceError', $invoice->ref).' : '.implode(', ', mmishipping::$errors), null, 'errors');
+							}
+						}
+					}
+				}
+				else {
+					setEventMessages($langs->trans('MMIShippingPortEditError').' : '.implode(', ', mmishipping::$errors), null, 'errors');
+				}
+			}
+			$action = '';
+		}
 
 		// Associated order
 		if ($this->in_context($parameters, 'ordersuppliercard') && in_array($action, ['adresse_assign_auto', 'receive_and_send']) && !empty($conf->global->MMISHIPPING_DF)) {

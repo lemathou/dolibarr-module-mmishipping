@@ -119,6 +119,7 @@ class modMMIShipping extends DolibarrModules
 				'supplierorderlist',
 				'receptiondao',
 				'shipmentlist',
+				'ordercard',
 				//   'data' => array(
 				//       'hookcontext1',
 				//       'hookcontext2',
@@ -279,6 +280,11 @@ class modMMIShipping extends DolibarrModules
 		$this->rights[$r][1] = 'Autoliquidation Réception/Expédition DF'; // Permission label
 		$this->rights[$r][4] = 'df';
 		$this->rights[$r][5] = 'autoliquidation'; // In php code, permission will be checked by test if ($user->rights->mmishipping->myobject->write)
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Modifier les frais de port des commandes clients (RM2381)'; // Permission label
+		$this->rights[$r][4] = 'commande';
+		$this->rights[$r][5] = 'port_edit'; // $user->rights->mmishipping->commande->port_edit
 		$r++;
 		/* END MODULEBUILDER PERMISSIONS */
 
