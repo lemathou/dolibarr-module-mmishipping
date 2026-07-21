@@ -44,6 +44,9 @@ $arrayofparameters = array(
 	'MMI_SHIPPING_CARRIER'=>array('type'=>'separator', 'enabled'=>1),
 	'MMI_SHIPPING_CARRIER_AUTOCALC'=>array('type'=>'yesno', 'enabled'=>1),
 	'MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID'=>array('type'=>'int', 'enabled'=>1),
+
+	'MMI_SHIPPING_PORT'=>array('type'=>'separator', 'enabled'=>1),
+	'MMI_SHIPPING_PORT_EDIT'=>array('type'=>'yesno', 'enabled'=>1),
 );
 
 require_once('../../mmicommon/admin/mmisetup_1.inc.php');

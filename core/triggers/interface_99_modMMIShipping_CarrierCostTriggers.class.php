@@ -145,15 +145,6 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 						$object->fetch_origin();
 						$order = $object->commande;
 
-						$shipping_product_id = getDolGlobalInt('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID');
-						$shipping_product_ids = getDolGlobalString('MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_IDS');
-						$shipping_product_ids = !empty($shipping_product_ids) ?explode(',', $shipping_product_ids) :[];
-						if (!empty($shipping_product_id) && !in_array($shipping_product_id, $shipping_product_ids)) {
-							$shipping_product_ids[] = $shipping_product_id;
-						}
-						$shipping_product_desc = 'Frais de port';
-						$shipping_product_tvatx = 20.0; // TVA 20%
-
 						$error_list = [
 							'noorder' => 'Aucune commande trouvée pour la référence',
 							'multiorder' => 'Plusieurs commandes trouvées pour la référence',
@@ -170,31 +161,22 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 						}
 						$msgs = [];
 
-						$found=0;
-						// @todo map everything so if I found only one shipping not mapped it is OK 
-						foreach($order->lines as $line) {
-							if (in_array($line->fk_product, $shipping_product_ids)) {
-								$found++;
-								if ($found>1)
-									break;
-							}
-						}
-						// None => create one
+						// @todo map everything so if I found only one shipping not mapped it is OK
+						dol_include_once('custom/mmishipping/class/mmishipping.class.php');
+						list($shipping_line, $found) = mmishipping::object_shipping_line($order);
+						// None => create one (subprice 0 : le port réel va en prix d'achat, la vente reste "Transport offert")
 						if ($found==0) {
-							$order_status = $order->statut;
-							$order->statut = Commande::STATUS_DRAFT; // Draftify order
-							$added = $order->addline('Transport offert', 0, 1, $shipping_product_tvatx, 0, 0, $shipping_product_id, 0, 0, 0, 'HT', 0, '', '', 1, -1, 0, 0, null, $price, $shipping_product_desc);
-							$order->statut = $order_status; // UnDraftify order
-							if ($added>0) {
+							$line_id = mmishipping::order_shipping_line_set($user, $order, 0, $price, 'Transport offert');
+							if ($line_id>0) {
 								$order->update($user);
-								$object->array_options['options_fk_order_line'] = $order->line->id;
+								$object->array_options['options_fk_order_line'] = $line_id;
 								$object->array_options['options_carrier_invoice_updated'] = 1;
 								$object_update = true;
 								$msgs[] = 'Created shipping line for order '.$order->ref.' with price '.$price;
 							}
 							else {
 								$error['addshiplineerror']++;
-								$msgs[] = 'Error creating shipping line for order '.$order->ref.' with price '.$price;
+								$msgs[] = 'Error creating shipping line for order '.$order->ref.' with price '.$price.' : '.implode(', ', mmishipping::$errors);
 							}
 						}
 						// At least 2 => by-pass
@@ -203,19 +185,18 @@ class InterfaceCarrierCostTriggers extends DolibarrTriggers
 							$msgs[] = 'Too many shippings for order '.$order->ref;
 							break;
 						}
-						// One => Update
+						// One => Update (pa_ht seul)
 						else {
-							foreach($order->lines as $line) {
-								if (in_array($line->fk_product, $shipping_product_ids)) {
-									// Mise à jour de la ligne de transport
-									$line->pa_ht = (float) $price;
-									$msgs[] = 'Update line '.$line->id.' for order '.$order->ref.' with price '.$price;
-									$line->update($user);
-									$object->array_options['options_fk_order_line'] = $line->id;
-									$object->array_options['options_carrier_invoice_updated'] = 1;
-									$object_update = true;
-									//var_dump($ret, $ret2);
-								}
+							$line_id = mmishipping::order_shipping_line_set($user, $order, null, (float) $price);
+							if ($line_id>0) {
+								$msgs[] = 'Update line '.$line_id.' for order '.$order->ref.' with price '.$price;
+								$object->array_options['options_fk_order_line'] = $line_id;
+								$object->array_options['options_carrier_invoice_updated'] = 1;
+								$object_update = true;
+							}
+							else {
+								$error['addshiplineerror']++;
+								$msgs[] = 'Error updating shipping line for order '.$order->ref.' : '.implode(', ', mmishipping::$errors);
 							}
 						}
 					}

@@ -87,3 +87,22 @@ Extrafield_real_weight = Poids mesuré transporteur
 Extrafield_carrier_metadata = Métadonnées transporteur
 Extrafield_carrier_invoice_updated = Données de facturation transporteur mises à jour
 Extrafield_fk_order_line = Ligne de commande relative à l'expédition
+
+#
+# Édition frais de port commande (RM2381)
+#
+MMI_SHIPPING_PORT = Frais de port
+MMI_SHIPPING_PORT_EDIT = Bouton "Frais de port" sur la fiche commande client (modification sans repasser en brouillon)
+MMIShippingPortEdit = Frais de port
+MMIShippingPortEditSellHT = Prix de vente HT
+MMIShippingPortEditBuyHT = Prix d'achat HT
+MMIShippingPortEditUpdateInvoice = Répercuter sur la facture liée (si ni payée ni comptabilisée)
+MMIShippingPortEditConfirmCreate = Ajouter une ligne de frais de port à la commande %s ?
+MMIShippingPortEditConfirmUpdate = Modifier la ligne de frais de port de la commande %s ?
+MMIShippingPortEditDone = Frais de port mis à jour sur la commande %s (PDF régénéré)
+MMIShippingPortEditError = Erreur lors de la mise à jour des frais de port
+MMIShippingPortEditNothingToDo = Aucun montant saisi, rien à faire
+MMIShippingPortEditTooManyLines = %s lignes de port trouvées sur la commande : modifiez-les manuellement (ambigu)
+MMIShippingPortEditInvoiceDone = Facture %s mise à jour (PDF régénéré)
+MMIShippingPortEditInvoiceSkipped = Facture %s NON modifiée (payée, comptabilisée ou statut incompatible) : faire une facture complémentaire si besoin
+MMIShippingPortEditInvoiceError = Erreur lors de la mise à jour de la facture %s
