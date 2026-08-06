@@ -30,13 +30,13 @@ die();
 
 // Recherche doublons d'envois de lignes de commande
 // Groupage par expédition : pas deux fois la même ligne de commande dans des expéditions dépôt 7
-$sql = 'SELECT DISTINCT GROUP_CONCAT(el.rowid) el_rowids, COUNT(*) nb, el.fk_expedition, el.fk_origin_line, el.qty, e.rowid, e.ref, e.fk_soc, e.ref_customer, e.date_valid, cl.qty cl_qty, cl.fk_commande, c.ref commande_ref
+$sql = 'SELECT DISTINCT GROUP_CONCAT(el.rowid) el_rowids, COUNT(*) nb, el.fk_expedition, el.fk_elementdet, el.qty, e.rowid, e.ref, e.fk_soc, e.ref_customer, e.date_valid, cl.qty cl_qty, cl.fk_commande, c.ref commande_ref
 	FROM `llx_expeditiondet` el
 	INNER JOIN `llx_expedition` e ON e.rowid=el.fk_expedition
-	LEFT JOIN `llx_commandedet` cl ON cl.rowid=el.fk_origin_line
+	LEFT JOIN `llx_commandedet` cl ON cl.rowid=el.fk_elementdet
 	LEFT JOIN `llx_commande` c ON c.rowid=cl.fk_commande
 	WHERE el.fk_entrepot = 7
-	GROUP BY el.fk_expedition, el.fk_origin_line
+	GROUP BY el.fk_expedition, el.fk_elementdet
 	HAVING COUNT(*)>1';
 $q = $db->query($sql);
 if ($q) while($row=$q->fetch_assoc()) {
@@ -45,14 +45,14 @@ if ($q) while($row=$q->fetch_assoc()) {
 
 // Recherche expé sans réceptions
 // Groupage par expédition : pas deux fois la même ligne de commande dans des expéditions dépôt 7
-$sql = 'SELECT DISTINCT GROUP_CONCAT(el.rowid) el_rowids, COUNT(*) nb, el.fk_expedition, el.fk_origin_line, el.qty, e.rowid, e.ref, e.fk_soc, e.ref_customer, e.date_valid, cl.qty cl_qty, cl.fk_commande, c.ref commande_ref
+$sql = 'SELECT DISTINCT GROUP_CONCAT(el.rowid) el_rowids, COUNT(*) nb, el.fk_expedition, el.fk_elementdet, el.qty, e.rowid, e.ref, e.fk_soc, e.ref_customer, e.date_valid, cl.qty cl_qty, cl.fk_commande, c.ref commande_ref
 	FROM `llx_expeditiondet` el
 	INNER JOIN `llx_expedition` e ON e.rowid=el.fk_expedition
-	LEFT JOIN `llx_commandedet` cl ON cl.rowid=el.fk_origin_line
+	LEFT JOIN `llx_commandedet` cl ON cl.rowid=el.fk_elementdet
 	LEFT JOIN `llx_commande` c ON c.rowid=cl.fk_commande
 	LEFT JOIN `llx_commande` c ON c.rowid=cl.fk_commande
 	WHERE el.fk_entrepot = 7
-	GROUP BY el.fk_expedition, el.fk_origin_line
+	GROUP BY el.fk_expedition, el.fk_elementdet
 	HAVING COUNT(*)>1';
 $q = $db->query($sql);
 if ($q) while($row=$q->fetch_assoc()) {
