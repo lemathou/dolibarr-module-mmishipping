@@ -5,9 +5,9 @@
  * ⚠ Modifie réellement la commande ciblée : ENV DE DEV UNIQUEMENT.
  *
  * Usage (php7.4, depuis ce dossier) :
- *   php7.4 port_edit_test.php order <order_id> <sell_ht|-> <buy_ht|->
+ *   php7.4 port_edit_test.php order <order_id> <sell_ht|-> <buy_ht|-> [desc|-]
  *   php7.4 port_edit_test.php invoice_check <invoice_id>
- *   php7.4 port_edit_test.php invoice <invoice_id> <sell_ht|-> <buy_ht|->
+ *   php7.4 port_edit_test.php invoice <invoice_id> <sell_ht|-> <buy_ht|-> [desc|-]
  *
  * "-" = null (valeur inchangée). Affiche l'état avant/après et vérifie que le
  * statut de l'objet n'a pas bougé.
@@ -32,13 +32,18 @@ function num($v)
 	return ($v === '-' || $v === null || $v === '') ?null :(float) $v;
 }
 
+function str_or_null($v)
+{
+	return ($v === '-' || $v === null) ?null :(string) $v;
+}
+
 function order_state(Commande $order)
 {
 	list($line, $count) = mmishipping::object_shipping_line($order);
 	return sprintf(
 		"  %s : statut=%d total_ht=%s | port: n=%d%s",
 		$order->ref, $order->statut, price($order->total_ht), $count,
-		$line ?sprintf(" line=%d subprice=%s pa_ht=%s qty=%s", $line->id, price($line->subprice), price($line->pa_ht), $line->qty) :''
+		$line ?sprintf(" line=%d subprice=%s pa_ht=%s qty=%s desc=%s", $line->id, price($line->subprice), price($line->pa_ht), $line->qty, json_encode($line->desc)) :''
 	);
 }
 
@@ -48,6 +53,7 @@ $id = isset($argv[2]) ?(int) $argv[2] :0;
 if ($mode == 'order' && $id) {
 	$sell = num(isset($argv[3]) ?$argv[3] :'-');
 	$buy = num(isset($argv[4]) ?$argv[4] :'-');
+	$desc = str_or_null(isset($argv[5]) ?$argv[5] :'-');
 
 	$order = new Commande($db);
 	if ($order->fetch($id) <= 0) {
@@ -57,7 +63,7 @@ if ($mode == 'order' && $id) {
 	$statut_before = (int) $order->statut;
 	echo "AVANT\n".order_state($order)."\n";
 
-	$ret = mmishipping::order_shipping_line_set($user, $order, $sell, $buy);
+	$ret = mmishipping::order_shipping_line_set($user, $order, $sell, $buy, $desc);
 	echo "order_shipping_line_set() = $ret".($ret < 0 ?' | '.implode(', ', mmishipping::$errors) :'')."\n";
 
 	$order2 = new Commande($db);
@@ -86,9 +92,10 @@ if (($mode == 'invoice' || $mode == 'invoice_check') && $id) {
 	}
 	$sell = num(isset($argv[3]) ?$argv[3] :'-');
 	$buy = num(isset($argv[4]) ?$argv[4] :'-');
+	$desc = str_or_null(isset($argv[5]) ?$argv[5] :'-');
 	$statut_before = (int) $invoice->statut;
 
-	$ret = mmishipping::invoice_shipping_line_set($user, $invoice, $sell, $buy);
+	$ret = mmishipping::invoice_shipping_line_set($user, $invoice, $sell, $buy, $desc);
 	echo "invoice_shipping_line_set() = $ret".($ret < 0 ?' | '.implode(', ', mmishipping::$errors) :'')."\n";
 
 	$invoice2 = new Facture($db);
@@ -96,9 +103,9 @@ if (($mode == 'invoice' || $mode == 'invoice_check') && $id) {
 	$invoice2->fetch_lines();
 	list($line, $count) = mmishipping::object_shipping_line($invoice2);
 	printf("APRES  %s : statut=%d total_ht=%s | port: n=%d%s\n", $invoice2->ref, $invoice2->statut, price($invoice2->total_ht), $count,
-		$line ?sprintf(" line=%d subprice=%s pa_ht=%s", $line->id, price($line->subprice), price($line->pa_ht)) :'');
+		$line ?sprintf(" line=%d subprice=%s pa_ht=%s desc=%s", $line->id, price($line->subprice), price($line->pa_ht), json_encode($line->desc)) :'');
 	echo ((int) $invoice2->statut === $statut_before) ?"OK statut inchangé ($statut_before)\n" :"ERREUR statut modifié : $statut_before → ".$invoice2->statut."\n";
 	exit($ret > 0 && (int) $invoice2->statut === $statut_before ?0 :1);
 }
 
-die("Usage : port_edit_test.php order|invoice|invoice_check <id> [sell|-] [buy|-]\n");
+die("Usage : port_edit_test.php order|invoice|invoice_check <id> [sell|-] [buy|-] [desc|-]\n");

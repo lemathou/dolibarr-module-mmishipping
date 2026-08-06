@@ -97,6 +97,7 @@ MMIShippingPortEdit = Frais de port
 MMIShippingPortEditSellHT = Prix de vente HT
 MMIShippingPortEditBuyHT = Prix d'achat HT
 MMIShippingPortEditUpdateInvoice = Répercuter sur la facture liée (si ni payée ni comptabilisée)
+MMIShippingPortEditDesc = Commentaire de la ligne (visible par le client sur la commande et la facture)
 MMIShippingPortEditConfirmCreate = Ajouter une ligne de frais de port à la commande %s ?
 MMIShippingPortEditConfirmUpdate = Modifier la ligne de frais de port de la commande %s ?
 MMIShippingPortEditDone = Frais de port mis à jour sur la commande %s (PDF régénéré)
