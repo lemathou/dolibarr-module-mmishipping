@@ -22,12 +22,12 @@ function metadata_dump($metadata=[])
 	echo '<table border="1">'
 		.'<tr>';
 	foreach(array_keys($metadata) as $key) {
-		echo '<td>'.$key.'</td>';
+		echo '<td>'.dol_escape_htmltag($key).'</td>';
 	}
 	echo '</tr>'
 		.'<tr>';
 	foreach($metadata as $value) {
-		echo '<td>'.$value.'</td>';
+		echo '<td>'.dol_escape_htmltag($value).'</td>';
 	}
 	echo '</tr>'
 		.'</table>';
@@ -41,19 +41,19 @@ function metadata_list_dump($metadata_list=[])
 			echo '<tr>';
 			echo '<th>Raison</th>';
 			foreach(array_keys($info['metadata']) as $key) {
-				echo '<th>'.$key.'</th>';
+				echo '<th>'.dol_escape_htmltag($key).'</th>';
 			}
 			$header = true;
 			echo '</tr>';
 		}
 		echo '<tr>';
-		echo '<td>'.$error_list[$info['error']].'</td>';
+		echo '<td>'.dol_escape_htmltag($error_list[$info['error']] ?? '').'</td>';
 		foreach($info['metadata'] as $value) {
-			echo '<td>'.$value.'</td>';
+			echo '<td>'.dol_escape_htmltag($value).'</td>';
 		}
+		echo '</tr>';
 	}
-	echo '</tr>'
-		.'</table>';
+	echo '</table>';
 }
 
 echo '<h3><a href="?action=list&carrier_name='.$carrier_name.'">Transporteur : '.$carrier_name.'</a></h3>';
