@@ -120,6 +120,10 @@ class modMMIShipping extends DolibarrModules
 				'receptiondao',
 				'shipmentlist',
 				'ordercard',
+				'expeditioncard',
+				'expeditionlist',
+				'receptioncard',
+				'receptionlist',
 				//   'data' => array(
 				//       'hookcontext1',
 				//       'hookcontext2',
