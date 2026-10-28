@@ -15,11 +15,15 @@ if (!file_exists($foldername)) {
 	mkdir($foldername, 0755);
 }
 
-$carrier_name = GETPOST('carrier_name', 'aZ09_-');
+$carrier_name = GETPOST('carrier_name', 'aZ09');
+if (!empty($carrier_name) && !in_array($carrier_name, $carriers, true)) {
+	echo '<p class="error">Transporteur inconnu: '.dol_escape_htmltag($carrier_name).'</p>';
+	exit;
+}
 
 $filename = GETPOST('filename');
 if ($filename && !preg_match('/^[0-9-]+\.csv$/', $filename)) {
-	echo '<p class="error">Invalid filename: '.$filename.'</p>';
+	echo '<p class="error">Invalid filename: '.dol_escape_htmltag($filename).'</p>';
 	exit;
 };
 

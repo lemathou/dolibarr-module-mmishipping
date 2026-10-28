@@ -77,6 +77,7 @@ else {
 ?>
 <div style="border: 1px solid black;margin-top: 20px;">
 <form method="POST" action="?carrier_name=<?php echo $carrier_name; ?>&action=save" enctype="multipart/form-data">
+	<input type="hidden" name="token" value="<?php echo newToken(); ?>" />
 	<p>
 		<label for="file">Choisir un (nouveau) fichier CSV à uploader :</label>
 		<input name="file" type="file" accept=".csv" />

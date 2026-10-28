@@ -6,6 +6,12 @@ if (!defined('DOL_VERSION'))
 
 
 if(!empty($_FILES['file'])) {
+	$token = GETPOST('token', 'alpha');
+	if (empty($token) || empty($_SESSION['newtoken']) || !hash_equals((string) $_SESSION['newtoken'], (string) $token)) {
+		echo '<p class="error">Invalid token</p>';
+		exit;
+	}
+
 	$ts = date('YmdHis');
 	$filename = $ts.'.csv';
 
@@ -54,7 +60,7 @@ if(!empty($_FILES['file'])) {
 		rename($foldername.'/'.$carrier_name.'/'.$oldfilename, $foldername.'/'.$carrier_name.'/'.$filename);
 		
 	} else {
-		echo '<p class="error">Failed to upload file '.$_FILES['file']['name'].'</p>';
+		echo '<p class="error">Failed to upload file '.dol_escape_htmltag($_FILES['file']['name']).'</p>';
 	}
 } else {
 	echo '<p class="error">No file uploaded.</p>';
