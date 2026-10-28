@@ -46,8 +46,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		global $conf, $user, $langs, $db;
 
 		$error = 0; // Error counter
-		//var_dump($this); die();
-		//var_dump(__CLASS__, get_called_class(), static::MOD_NAME, $lang);
 
 		// Associated order
 		if ($this->in_context($parameters, 'ordersuppliercard') && !empty($conf->global->MMISHIPPING_DF)) {
@@ -225,12 +223,10 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		if ($this->in_context($parameters, 'ordersuppliercard') && in_array($action, ['adresse_assign_auto', 'receive_and_send']) && !empty($conf->global->MMISHIPPING_DF)) {
 			// Recherche commande liée
 			$commande = mmishipping::order_associated_to_supplier_order($object->id);
-			//var_dump($commande);
 		}
 
 		// Assign client address
 		if ($this->in_context($parameters, 'ordersuppliercard') && $action=='adresse_assign_auto' && !empty($commande) && !empty($conf->global->MMISHIPPING_DF) && !empty($user->rights->mmishipping->df->affect)) {
-			//var_dump($commande);
 			mmishipping::supplier_order_shipping_address_assign($user, $object, $commande);
 		}
 
@@ -260,23 +256,18 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		$myvalue = 'test'; // A result value
 		$print = '';
 		//die();
-		//var_dump($this); die();
-		//var_dump(__CLASS__, get_called_class(), static::MOD_NAME, $lang);
 		//$langs->load('mmishipping@mmishipping');
 
 		if ($this->in_context($parameters, 'supplierorderlist') && getDolGlobalInt('MMISHIPPING_DF'))
 		{
-			//var_dump($parameters);
 			//$this->results = [];
 			if (!empty($user->rights->mmishipping->df->affect))
 				$print .= '<option value="adresse_assign_auto">'.img_picto('', 'supplier', 'class="pictofixedwidth"').$langs->trans("MMIShippingAssignAddresses").'</option>';
 			if (!empty($conf->global->MMISHIPPING_DF_ENTREPOT) && !empty($user->rights->mmishipping->df->autoliquidation))
 				$print .= '<option value="receive_and_send">'.img_picto('', 'supplier', 'class="pictofixedwidth"').$langs->trans("MMIShippingSupplierOrdersReceiveAndSend").'</option>';
-			//var_dump($print);
 		}
 		elseif ($this->in_context($parameters, 'shipmentlist') && getDolGlobalInt('MMI_SHIPPING_PREPA_MULTI'))
 		{
-			//var_dump($parameters);
 			//$this->results = [];
 			$print .= '<option value="preparationslip">'.img_picto('', 'file-pdf', 'class="pictofixedwidth"').$langs->trans("MMIShippingPreparationSlip").'</option>';
 		}
@@ -304,7 +295,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 
 		if (empty($massaction = $parameters['massaction']))
 			return 0;
-		//var_dump($parameters);
 		
 		if ($this->in_context($parameters, 'supplierorderlist')
 			&& $massaction=='receive_and_send'
@@ -315,7 +305,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 				$object = new CommandeFournisseur($db);
 				$object->fetch($id);
 				$commande = mmishipping::order_associated_to_supplier_order($id);
-				//var_dump($id, $object, $commande); die();
 				if (!empty($commande)) {
 					if (mmishipping::autoliquidation($user, $object, $commande) < 0) {
 						$error += mmishipping::$error;
@@ -333,10 +322,11 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 				$object = new CommandeFournisseur($db);
 				$object->fetch($id);
 				$commande = mmishipping::order_associated_to_supplier_order($id);
-				//var_dump($id, $object, $commande); die();
 				if (!empty($commande)) {
-					$r = mmishipping::supplier_order_shipping_address_assign($user, $object, $commande);
-					var_dump($r);
+					if (mmishipping::supplier_order_shipping_address_assign($user, $object, $commande) < 0) {
+						$error += mmishipping::$error;
+						$this->errors = array_merge($this->errors, mmishipping::$errors);
+					}
 				}
 			}
 			//die('adresse_assign_auto');
@@ -399,7 +389,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 		// Display supplier & supplier_email in reception popup
 		if ($this->in_context($parameters, 'receptiondao')) {
 			// Recherche commande liée
-			//var_dump($object); die();
 			// Pas les infos dans le contexte => c'est qu'on est peut-être dans une liste et on va pas tout aller chercher...
 			if (empty($object->origin) || empty($object->origin_id))
 				return 0;
@@ -434,7 +423,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
         $print = '';
     
         if ($this->in_context($parameters, 'supplierorderlist')) {
-            //var_dump($parameters);
             $print .= '<div class="inline-block">';
 			$search_fk_adresse_notnull = GETPOST('search_fk_adresse_notnull');
 			$print .= '&nbsp;Adresse client :';
@@ -470,7 +458,6 @@ class ActionsMMIShipping extends MMI_Actions_1_0
         $print = '';
     
         if ($this->in_context($parameters, 'supplierorderlist')) {
-            //var_dump($parameters);
             foreach(['search_fk_adresse_notnull', 'search_fk_adresse_null', 'search_fk_entrepot_notnull', 'search_fk_entrepot_null'] as $i)
 				if (GETPOST($i))
 					$print .= '&'.$i.'=1';

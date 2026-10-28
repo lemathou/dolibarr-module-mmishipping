@@ -40,7 +40,6 @@ $sql = 'SELECT DISTINCT GROUP_CONCAT(el.rowid) el_rowids, COUNT(*) nb, el.fk_exp
 	HAVING COUNT(*)>1';
 $q = $db->query($sql);
 if ($q) while($row=$q->fetch_assoc()) {
-	var_dump($row);
 }
 
 // Recherche expé sans réceptions
@@ -56,7 +55,6 @@ $sql = 'SELECT DISTINCT GROUP_CONCAT(el.rowid) el_rowids, COUNT(*) nb, el.fk_exp
 	HAVING COUNT(*)>1';
 $q = $db->query($sql);
 if ($q) while($row=$q->fetch_assoc()) {
-	var_dump($row);
 }
 
 // Recherche réceptions sans expé
