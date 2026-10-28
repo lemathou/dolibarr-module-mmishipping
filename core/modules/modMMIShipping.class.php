@@ -269,6 +269,14 @@ class modMMIShipping extends DolibarrModules
 		// Permissions provided by this module
 		$this->rights = array();
 		$r = 0;
+		// Accueil du module
+		$this->menu[$r++] = array(
+			'fk_menu'=>'', 'type'=>'top', 'titre'=>'MMIShippingHome',
+			'mainmenu'=>'mmishipping', 'leftmenu'=>'',
+			'url'=>'/custom/mmishipping/mmishippingindex.php',
+			'langs'=>'mmishipping@mmishipping', 'position'=>1000+$r,
+			'enabled'=>'$conf->mmishipping->enabled', 'perms'=>'1', 'target'=>'', 'user'=>2,
+		);
 		// Add here entries to declare new permissions
 		/* BEGIN MODULEBUILDER PERMISSIONS */
 		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1); // Permission id (must not be already used)

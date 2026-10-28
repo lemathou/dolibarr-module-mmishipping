@@ -107,3 +107,6 @@ MMIShippingPortEditTooManyLines = %s lignes de port trouvées sur la commande : 
 MMIShippingPortEditInvoiceDone = Facture %s mise à jour (PDF régénéré)
 MMIShippingPortEditInvoiceSkipped = Facture %s NON modifiée (payée, comptabilisée ou statut incompatible) : faire une facture complémentaire si besoin
 MMIShippingPortEditInvoiceError = Erreur lors de la mise à jour de la facture %s
+MMIShippingHome = Accueil
+MMIShippingHomeIntro = Vue d'ensemble du module expédition MMI : analyse des coûts transporteur et paramétrage.
+MMIShippingHomeLinks = Accès rapides
