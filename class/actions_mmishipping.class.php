@@ -504,6 +504,56 @@ class ActionsMMIShipping extends MMI_Actions_1_0
             return -1;
         }
     }
+
+    /**
+     * Tri des lignes d'expedition par reference produit avant generation PDF.
+     */
+    public function beforePDFCreation($parameters, &$object, &$action, $hookmanager)
+    {
+        if (!empty($object->element) && $object->element == 'shipping'
+            && getDolGlobalInt('MMI_EXPE_ORDER_LINES_BY_REF')) {
+            usort($object->lines, function ($a, $b) {
+                return ($a->ref > $b->ref) ? 1 : (($a->ref < $b->ref) ? -1 : 0);
+            });
+        }
+        return 0;
+    }
+
+    /**
+     * Adresse d'expedition des receptions : entrepot ou contact alternatif.
+     */
+    public function pdf_build_address($parameters, &$object, &$action, $hookmanager)
+    {
+        if (empty($parameters['mode']) || $parameters['mode'] != 'source') {
+            return 0;
+        }
+        if (!getDolGlobalInt('MMI_RECEPTION_SENDER_ADDRESS')) {
+            return 0;
+        }
+        if (empty($object) || empty($object->element) || $object->element != 'reception') {
+            return 0;
+        }
+
+        $source = $parameters['sourcecompany'];
+        if (!empty($object->array_options['options_fk_entrepot'])) {
+            require_once DOL_DOCUMENT_ROOT.'/product/stock/class/entrepot.class.php';
+            $entrepot = new Entrepot($this->db);
+            if ($entrepot->fetch($object->array_options['options_fk_entrepot']) > 0) {
+                $source->name = $entrepot->lieu;
+                $hookmanager->resPrint = $entrepot->address."\n".$entrepot->zip.' '.$entrepot->town."\n".$entrepot->country;
+                return 1;
+            }
+        } elseif (!empty($object->array_options['options_fk_adresse'])) {
+            require_once DOL_DOCUMENT_ROOT.'/contact/class/contact.class.php';
+            $contact = new Contact($this->db);
+            if ($contact->fetch($object->array_options['options_fk_adresse']) > 0) {
+                $source->name = $contact->lastname.' '.$contact->firstname;
+                $hookmanager->resPrint = $contact->address."\n".$contact->zip.' '.$contact->town."\n".$contact->country;
+                return 1;
+            }
+        }
+        return 0;
+    }
 }
 
 ActionsMMIShipping::__init();
