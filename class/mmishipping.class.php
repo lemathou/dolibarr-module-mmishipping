@@ -13,6 +13,9 @@ require_once DOL_DOCUMENT_ROOT.'/reception/class/reception.class.php';
 
 class mmishipping
 {
+	/** Libellé/description par défaut d'une ligne de port créée par le module */
+	const PORT_LABEL = 'Frais de port';
+
 	public static $error = 0;
 	public static $errors = [];
 
@@ -673,11 +676,12 @@ class mmishipping
 	 * @param Commande $order    commande avec lines chargées
 	 * @param float|null $subprice PU vente HT (null = inchangé)
 	 * @param float|null $pa_ht    prix d'achat HT (null = inchangé)
-	 * @param string   $desc     description si création de la ligne
+	 * @param string|null $desc   description de la ligne, visible sur les documents client
+	 *                            (null = inchangée ; défaut static::PORT_LABEL à la création) — RM2559
 	 * @param float    $tva_tx   TVA si création de la ligne
 	 * @return int id de la ligne si OK, <0 si KO (static::$errors)
 	 */
-	public static function order_shipping_line_set(User $user, Commande $order, $subprice=null, $pa_ht=null, $desc='Frais de port', $tva_tx=20.0)
+	public static function order_shipping_line_set(User $user, Commande $order, $subprice=null, $pa_ht=null, $desc=null, $tva_tx=20.0)
 	{
 		global $db;
 
@@ -701,7 +705,7 @@ class mmishipping
 		}
 
 		// Ligne existante, changement de pa_ht seul : update direct (pas de garde brouillon, pas de recalcul nécessaire)
-		if ($line && $subprice === null) {
+		if ($line && $subprice === null && $desc === null) {
 			if ($pa_ht === null)
 				return $line->id;
 			$line->pa_ht = (float) $pa_ht;
@@ -720,7 +724,8 @@ class mmishipping
 
 		if ($line) {
 			$ret = $order->updateline(
-				$line->id, $line->desc, (float) $subprice, $line->qty, $line->remise_percent,
+				$line->id, ($desc !== null ? $desc : $line->desc),
+				($subprice !== null ? (float) $subprice : $line->subprice), $line->qty, $line->remise_percent,
 				$line->tva_tx, $line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits,
 				$line->date_start, $line->date_end, $line->product_type, $line->fk_parent_line, 0,
 				$line->fk_fournprice, ($pa_ht !== null ? (float) $pa_ht : $line->pa_ht), $line->label,
@@ -731,8 +736,9 @@ class mmishipping
 		}
 		else {
 			$ret = $order->addline(
-				$desc, (float) $subprice, 1, $tva_tx, 0, 0, reset($shipping_product_ids), 0, 0, 0,
-				'HT', 0, '', '', 1, -1, 0, 0, null, ($pa_ht !== null ? (float) $pa_ht : 0), 'Frais de port'
+				($desc !== null ? $desc : static::PORT_LABEL), (float) $subprice, 1, $tva_tx, 0, 0,
+				reset($shipping_product_ids), 0, 0, 0,
+				'HT', 0, '', '', 1, -1, 0, 0, null, ($pa_ht !== null ? (float) $pa_ht : 0), static::PORT_LABEL
 			);
 			$line_id = $ret > 0 ?$ret :0;
 		}
@@ -753,10 +759,11 @@ class mmishipping
 	 * Crée ou met à jour la ligne de port d'une facture (RM2381).
 	 * Même principe de flip mémoire que order_shipping_line_set().
 	 * Les gardes métier (paiements, compta) sont à la charge de l'appelant.
+	 * $desc : null = description inchangée (RM2559).
 	 *
 	 * @return int id de la ligne si OK, <0 si KO (static::$errors)
 	 */
-	public static function invoice_shipping_line_set(User $user, Facture $invoice, $subprice=null, $pa_ht=null, $desc='Frais de port', $tva_tx=20.0)
+	public static function invoice_shipping_line_set(User $user, Facture $invoice, $subprice=null, $pa_ht=null, $desc=null, $tva_tx=20.0)
 	{
 		global $db;
 
@@ -785,7 +792,8 @@ class mmishipping
 
 		if ($line) {
 			$ret = $invoice->updateline(
-				$line->id, $line->desc, ($subprice !== null ? (float) $subprice : $line->subprice), $line->qty,
+				$line->id, ($desc !== null ? $desc : $line->desc),
+				($subprice !== null ? (float) $subprice : $line->subprice), $line->qty,
 				$line->remise_percent, $line->date_start, $line->date_end, $line->tva_tx,
 				$line->localtax1_tx, $line->localtax2_tx, 'HT', $line->info_bits, $line->product_type,
 				$line->fk_parent_line, 0, $line->fk_fournprice,
@@ -797,9 +805,9 @@ class mmishipping
 		}
 		else {
 			$ret = $invoice->addline(
-				$desc, ($subprice !== null ? (float) $subprice : 0), 1, $tva_tx, 0, 0,
+				($desc !== null ? $desc : static::PORT_LABEL), ($subprice !== null ? (float) $subprice : 0), 1, $tva_tx, 0, 0,
 				reset($shipping_product_ids), 0, '', '', 0, 0, 0, 'HT', 0, 1, -1, 0, '', 0, 0, null,
-				($pa_ht !== null ? (float) $pa_ht : 0), 'Frais de port'
+				($pa_ht !== null ? (float) $pa_ht : 0), static::PORT_LABEL
 			);
 			$line_id = $ret > 0 ?$ret :0;
 		}

@@ -113,11 +113,15 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 				['type' => 'text', 'name' => 'port_buy_ht', 'label' => $langs->trans('MMIShippingPortEditBuyHT'),
 					'value' => $line !== null ?price2num($line->pa_ht) :''],
 				['type' => 'checkbox', 'name' => 'port_update_invoice', 'label' => $langs->trans('MMIShippingPortEditUpdateInvoice'), 'value' => 1],
+				// Commentaire de la ligne de service, imprimé sous le libellé sur les PDF client (RM2559)
+				['type' => 'textarea', 'name' => 'port_desc', 'label' => $langs->trans('MMIShippingPortEditDesc'),
+					'value' => dol_escape_htmltag($line !== null ?$line->desc :mmishipping::PORT_LABEL, 0, 1),
+					'morecss' => 'centpercent', 'moreattr' => 'rows="3"'],
 			];
 			$text = $langs->trans($line !== null ?'MMIShippingPortEditConfirmUpdate' :'MMIShippingPortEditConfirmCreate', $object->ref);
 			$this->resprints = $form->formconfirm(
 				$_SERVER['PHP_SELF'].'?id='.$object->id, $langs->trans('MMIShippingPortEdit'),
-				$text, 'confirm_port_edit', $formquestion, 'yes', 1, 260
+				$text, 'confirm_port_edit', $formquestion, 'yes', 1, 350
 			);
 		}
 
@@ -140,11 +144,20 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 			$sell = ($sell !== '' && $sell !== null) ?(float) price2num($sell) :null;
 			$buy = ($buy !== '' && $buy !== null) ?(float) price2num($buy) :null;
 
-			if ($sell === null && $buy === null) {
+			// Commentaire client de la ligne de port (RM2559) : null = inchangé
+			$desc = trim((string) GETPOST('port_desc', 'restricthtml'));
+			list($cur_line, $cur_count) = mmishipping::object_shipping_line($object);
+			if ($cur_line !== null)
+				$desc = ($desc === trim((string) $cur_line->desc)) ?null :$desc; // vide = commentaire retiré
+			else
+				$desc = ($desc === '') ?null :$desc; // création : vide = libellé par défaut
+
+			// Sans ligne existante, un commentaire seul ne suffit pas à créer la ligne
+			if ($sell === null && $buy === null && ($cur_line === null || $desc === null)) {
 				setEventMessages($langs->trans('MMIShippingPortEditNothingToDo'), null, 'warnings');
 			}
 			else {
-				$line_id = mmishipping::order_shipping_line_set($user, $object, $sell, $buy);
+				$line_id = mmishipping::order_shipping_line_set($user, $object, $sell, $buy, $desc);
 				if ($line_id > 0) {
 					$object->fetch($object->id);
 					$object->fetch_lines();
@@ -160,7 +173,8 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 					$ac->type_code = 'AC_OTH_AUTO';
 					$ac->code = 'AC_MMISHIPPING_PORT_EDIT';
 					$ac->label = 'Frais de port modifiés sur commande '.$object->ref
-						.($sell !== null ?' (vente '.price($sell).' HT)' :'').($buy !== null ?' (achat '.price($buy).' HT)' :'');
+						.($sell !== null ?' (vente '.price($sell).' HT)' :'').($buy !== null ?' (achat '.price($buy).' HT)' :'')
+						.($desc !== null ?' (commentaire : '.dol_trunc($desc, 80).')' :'');
 					$ac->datep = dol_now();
 					$ac->datef = dol_now();
 					$ac->percentage = -1;
@@ -186,7 +200,7 @@ class ActionsMMIShipping extends MMI_Actions_1_0
 								setEventMessages($langs->trans('MMIShippingPortEditInvoiceSkipped', $invoice->ref), null, 'warnings');
 								continue;
 							}
-							$inv_line_id = mmishipping::invoice_shipping_line_set($user, $invoice, $sell, $buy);
+							$inv_line_id = mmishipping::invoice_shipping_line_set($user, $invoice, $sell, $buy, $desc);
 							if ($inv_line_id > 0) {
 								$invoice->fetch($invoice->id);
 								$invoice->fetch_lines();
