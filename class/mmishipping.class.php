@@ -54,7 +54,6 @@ class mmishipping
 		$customer = new Societe($db);
 		$customer->fetch($commande->socid);
 		$contacts = $customer->contact_array_objects();
-		//var_dump($contacts); die();
 		// Un seul contact => on prend
 		if (count($contacts)==1) {
 			foreach($contacts as $contact)
@@ -78,11 +77,8 @@ class mmishipping
 	public static function supplier_order_shipping_address_assign($user, $commande_fourn, $commande)
 	{
 		if (!empty($contact = static::supplier_order_shipping_address($user, $commande_fourn, $commande))) {
-			//var_dump($contact); die();
 			// Assignation contact livraison commande à la commande fournisseur
 			$commande_fourn->array_options['options_fk_adresse'] = is_array($contact) ?$contact['id'] :(is_object($contact) ?$contact->id :'');
-			//var_dump($object->array_options);
-			//var_dump($object);
 			$commande_fourn->update($user);
 		}
 	}
@@ -96,11 +92,9 @@ class mmishipping
 			WHERE e.`targettype` LIKE 'order_supplier' AND e.`fk_target`='".$id."' AND e.sourcetype='commande'";
 		//echo '<p>'.$sql.'</p>';
 		$resql = $db->query($sql);
-		//var_dump($resql);
 		if ($obj = $db->fetch_object($resql)) {
 			$commande = new Commande($db);
 			$commande->fetch($obj->id);
-			//var_dump($obj->id);
 			return $commande;
 		}
 	}
@@ -108,8 +102,6 @@ class mmishipping
 	// expédition auto depuis réception
 	public static function commande_fourn_to_reception(User $user, CommandeFournisseur $commande_fourn, $validate=true)
 	{
-		//var_dump($order); die();
-		//var_dump($user); die();
 		global $conf, $db, $langs;
 
 		if (! $user->rights->reception->creer)
@@ -218,8 +210,6 @@ class mmishipping
 	// Création expédition
 	public static function commande_fourn_to_shipping(User $user, CommandeFournisseur $commande_fourn, $validate=true)
 	{
-		//var_dump($order); die();
-		//var_dump($user); die();
 		global $conf, $db, $langs;
 
 		if (! $user->rights->expedition->creer)
@@ -238,7 +228,6 @@ class mmishipping
 			WHERE e.`targettype` LIKE 'order_supplier' AND e.`fk_target`='".$commande_fourn->id."' AND e.sourcetype='commande'";
 		//echo '<p>'.$sql.'</p>';
 		$resql = $db->query($sql);
-		//var_dump($resql);
 		if ($obj = $db->fetch_object($resql)) {
 			$order = new Commande($db);
 			$order->fetch($obj->id);
@@ -281,13 +270,11 @@ class mmishipping
 		$object->fk_incoterms = $objectsrc->fk_incoterms;
 		$object->location_incoterms = $objectsrc->location_incoterms;
 
-		//var_dump($conf->productbatch->enabled);
 		
 		$fcp_list = [];
 		//$commande_fourn->loadReceptions();
 		// Parcours produits commande fournisseur
 		foreach ($commande_fourn->lines as $line) {
-			//var_dump($line);
 			if (! $line->fk_product)
 				continue;
 
@@ -313,13 +300,11 @@ class mmishipping
 			else
 				$fcp_list[$product->id] += $qty;
 		}
-		//var_dump($fcp_list);
 
 		$cp_list = [];
 		$order->loadExpeditions();
 		// Parcours produits commande client
 		foreach ($order->lines as $line) {
-			//var_dump($line);
 			if (! $line->fk_product)
 				continue;
 
@@ -342,16 +327,13 @@ class mmishipping
 
 			$cp_list[$line->fk_product][$line->id] = $qty;
 		}
-		//var_dump($cp_list);
 
 		// Boucle à envoyer présent commande fournisseur
 		foreach ($fcp_list as $id=>$qty) {
 			$qty_reste = $qty;
 
-			//var_dump($id, $qty);
 			// Boucle reste à envoyer dans commande client
 			foreach($cp_list[$id] as $cline_id=>$cqty) {
-				//var_dump($cline_id, $cqty);
 
 				// Plus rien à expédier dans la lignede commande client
 				if ($cqty==0) {
@@ -381,7 +363,6 @@ class mmishipping
 				if ($cp_list[$id][$cline_id]==0)
 					unset($cp_list[$id][$cline_id]);
 
-				//var_dump($eqty);
 				$ret = $object->addline($warehouse_id, $cline_id, $eqty);
 				if ($ret < 0) {
 					setEventMessages($object->error, $object->errors, 'errors');
@@ -434,7 +415,6 @@ class mmishipping
 			$db->commit();
 			
 			return $object;
-			//var_dump($expe);
 		} else {
 			$db->rollback();
 		}
@@ -465,7 +445,6 @@ class mmishipping
 				$ok = true;
 				$todo = [];
 				foreach($object->lines as $line) {
-					//var_dump($line);
 					// Quantité restant à réceptionner dans la commande fournisseur
 					$qty = $line->qty;
 					// déjà reçu
@@ -473,7 +452,6 @@ class mmishipping
 						$qty -= $object->receptions[$line->id];
 					// @var $found Quantité encore à expédier depuis la commande
 					$found = 0;
-					//var_dump($commande->lines);
 					foreach($commande->lines as $cline) {
 						// Qté dans commande
 						if ($cline->fk_product==$line->fk_product) {
@@ -483,7 +461,6 @@ class mmishipping
 								$found -= $commande->expeditions[$cline->id];
 						}
 					}
-					//var_dump($found, $qty);
 					// Si qté à réceptionner > qté à expédier, BUG car on va en envoyer trop par rapport à ce qui est commandé
 					if ($qty>$found) {
 						$ok = false;
@@ -505,7 +482,6 @@ class mmishipping
 				// Créer réception & expé
 				if ($ok) {
 					//
-					//var_dump($todo);
 					$reception = mmishipping::commande_fourn_to_reception($user, $object);
 					$shipping = mmishipping::commande_fourn_to_shipping($user, $object);
 					// Lien entre les deux
@@ -515,7 +491,6 @@ class mmishipping
 						('.$reception->id.', "reception", '.$shipping->id.', "shipping")';
 					$db->query($sql);
 				}
-				//var_dump($ok);
 			}
 			else {
 				$error++;
@@ -546,7 +521,6 @@ class mmishipping
 
 		$eatby = $sellby = false;
 
-		//var_dump($list);
 		foreach($list as $id) {
 			$expeditionstatic->fetch($id);
 			if (!empty($expeditionstatic->id)) {
@@ -560,9 +534,7 @@ class mmishipping
 							'qty'=>0,
 							'batch'=>[],
 						];
-						//var_dump($table);
 					}
-					//var_dump($line->id, $line->qty, $line->qty_shipped, $line->fk_product);
 					// Batch
 					if (!empty($line->detail_batch)) {
 						foreach($line->detail_batch as $dbatch) {
@@ -570,7 +542,6 @@ class mmishipping
 								$eatby = true;
 							if ($sellby === false && !empty($dbatch->sellby))
 								$sellby = true;
-							//var_dump('----', $dbatch->sellby, $dbatch->eatby, $dbatch->batch, $dbatch->qty);
 							if (!isset($table[$line->fk_product]['batch'][$dbatch->batch])) {
 								$table[$line->fk_product]['batch'][$dbatch->batch] = [
 									'qty'=>0,
@@ -590,7 +561,6 @@ class mmishipping
 				}
 			}
 		}
-		//var_dump($table); die();
 		echo '<h1>Bordereau de picking multi-expé</h1>';
 		echo '<table border="1">';
 		echo '<thead><tr>';

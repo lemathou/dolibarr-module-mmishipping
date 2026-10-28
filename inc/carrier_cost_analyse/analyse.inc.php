@@ -262,7 +262,6 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 
 	$infos = $db->fetch_object($resql);
 
-	//var_dump($commande);
 	// $commande = new Commande($db);
 	// $commande->fetch($infos->rowid);
 
@@ -339,7 +338,6 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 			$expedition_found = true;
 		}
 
-		//var_dump($expedition);
 		$price = 0;
 		foreach(['shipping_price', 'surete_price', 'multicolis_price', 'urbaine_price', 'souffrance_price'] as $i) {
 			$metadata[$i] = trim(str_replace(',', '.', $metadata[$i]));
@@ -359,7 +357,6 @@ while (($data = fgetcsv($fp, 1000, ";")) !== FALSE) {
 		
 		$res = $object->update($user);
 		$res2 =  $object->insertExtraFields();
-		//var_dump($object->array_options, $res, $res2);
 
 		// Updated one expedition, finished
 		break;

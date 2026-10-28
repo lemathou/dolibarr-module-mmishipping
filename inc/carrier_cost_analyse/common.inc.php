@@ -16,7 +16,6 @@ if (!file_exists($foldername)) {
 }
 
 $carrier_name = GETPOST('carrier_name', 'aZ09_-');
-//var_dump($carrier_name);
 
 $filename = GETPOST('filename');
 if ($filename && !preg_match('/^[0-9-]+\.csv$/', $filename)) {
@@ -25,4 +24,3 @@ if ($filename && !preg_match('/^[0-9-]+\.csv$/', $filename)) {
 };
 
 $file_id = GETPOST('file_id', 'int');
-//var_dump($file_id);
