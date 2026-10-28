@@ -540,7 +540,7 @@ class ActionsMMIShipping extends MMI_Actions_1_0
             $entrepot = new Entrepot($this->db);
             if ($entrepot->fetch($object->array_options['options_fk_entrepot']) > 0) {
                 $source->name = $entrepot->lieu;
-                $hookmanager->resPrint = $entrepot->address."\n".$entrepot->zip.' '.$entrepot->town."\n".$entrepot->country;
+                $this->resprints = $entrepot->address."\n".$entrepot->zip.' '.$entrepot->town."\n".$entrepot->country;
                 return 1;
             }
         } elseif (!empty($object->array_options['options_fk_adresse'])) {
@@ -548,7 +548,7 @@ class ActionsMMIShipping extends MMI_Actions_1_0
             $contact = new Contact($this->db);
             if ($contact->fetch($object->array_options['options_fk_adresse']) > 0) {
                 $source->name = $contact->lastname.' '.$contact->firstname;
-                $hookmanager->resPrint = $contact->address."\n".$contact->zip.' '.$contact->town."\n".$contact->country;
+                $this->resprints = $contact->address."\n".$contact->zip.' '.$contact->town."\n".$contact->country;
                 return 1;
             }
         }
