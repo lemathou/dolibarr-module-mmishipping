@@ -1,86 +1,95 @@
-# MMISHIPPING FOR [DOLIBARR ERP CRM](https://www.dolibarr.org)
+# MMIShipping — Expédition et réception MMI : affectation DF, autoliquidation, édition du port, analyse des coûts transporteur et hooks PDF.
 
-## Features
+> Module Dolibarr **MMIShipping** (version 1.1), branche `20.0`.
 
-Description of the module...
+## Fonctionnalités
 
-<!--
-![Screenshot mmishipping](img/screenshot_mmishipping.png?raw=true "MMIShipping"){imgmd}
--->
+### Fonctionnalités principales
 
-Other external modules are available on [Dolistore.com](https://www.dolistore.com).
+- Affectation du destinataire DF et réception/envoi entrepôt (`MMISHIPPING_DF`, `MMISHIPPING_DF_ENTREPOT`).
+- Autoliquidation de TVA sur les frais de port (`MMI_SHIPPING_PORT_EDIT`, droits dédiés).
+- Édition du port sur les commandes fournisseur (`port_edit`).
+- Analyse des coûts transporteur : import CSV, analyse, trigger `CarrierCostTriggers` (`carrier_cost_analyse.php`).
+- Correction d'autoliquidation (`fix_autoliquidation.php`).
+- Hooks PDF expédition/réception : tri par référence et adresse de réception (RM3582).
 
-## Translations
+### Écrans et menus
 
-Translations can be completed manually by editing files into directories *langs*.
+- **Accueil** — `/custom/mmishipping/mmishippingindex.php` (menu mmishipping, droit `1`)
+- **Expéditions/Réceptions avancées** — `/mmishipping/mmishippingindex.php` (menu mmishipping, droit `1`)
 
-<!--
-This module contains also a sample configuration for Transifex, under the hidden directory [.tx](.tx), so it is possible to manage translation using this service.
+### Pages
 
-For more informations, see the [translator's documentation](https://wiki.dolibarr.org/index.php/Translator_documentation).
+- `admin/about.php`
+- `admin/setup.php`
+- `carrier_cost_analyse.php`
+- `fix_autoliquidation.php`
+- `mmishippingindex.php`
 
-There is a [Transifex project](https://transifex.com/projects/p/dolibarr-module-template) for this module.
--->
+### Permissions
 
-<!--
+- `mmishipping.df.affect` — Affectation Destinataire DF
+- `mmishipping.df.autoliquidation` — Autoliquidation Réception/Expédition DF
+- `mmishipping.commande.port_edit` — Modifier les frais de port des commandes clients (RM2381)
+
+### Configuration
+
+| Constante | Type | Rôle |
+|---|---|---|
+| `MMI_SHIPPING` | separator | Expéditions |
+| `MMISHIPPING_DF` | yesno | Gestion auto réceptions/expéditions contremarques |
+| `MMISHIPPING_DF_ENTREPOT` | int | Entrepôt "virtuel" pour la livraison directe (réception/expédition) |
+| `SHIPPING_PDF_HIDE_WEIGHT_AND_VOLUME` | yesno | Masquer la colonne "poids et volume" dans les expéditions |
+| `SHIPPING_PDF_HIDE_VOLUME` | yesno | Masquer les volumes (conserver les poids) dans les expéditions |
+| `MMI_SHIPPING_PREPA_MULTI` | yesno | Bon de prépa pour plusieurs expéditions |
+| `MMI_EXPE_ORDER_LINES_BY_REF` | yesno |  |
+| `MMI_RECEPTION` | separator | Réceptions |
+| `MMI_RECEPTION_SENDER_ADDRESS` | yesno | Affichage de l'adresse du dépît ou du contact selon le type de réception |
+| `STOCK_DISPLAY_WARN_IN_SHIPMENT_ENHANCED` | yesno | Afficher les warnings dans les expé de façon plus lisible |
+| `STOCK_DISPLAY_WARN_IN_SHIPMENT_ONLY_NEEDED` | yesno | Masquer les warnings dans les expé si déjà expédié |
+| `MMI_SHIPPING_CARRIER` | separator | Gestion transporteurs |
+| `MMI_SHIPPING_CARRIER_AUTOCALC` | yesno | Répercution automatique des frais de port des expéditions sur les commandes |
+| `MMI_SHIPPING_CARRIER_SHIPPING_PRODUCT_ID` | int | ID Produit à analyser/créer/mettre à jour pour les expéditions |
+| `MMI_SHIPPING_PORT` | separator | Frais de port |
+| `MMI_SHIPPING_PORT_EDIT` | yesno | Bouton "Frais de port" sur la fiche commande client (modification sans repasser en brouillon) |
+
+### Hooks
+
+- Contextes : `ordersuppliercard`, `supplierorderlist`, `receptiondao`, `shipmentlist`, `ordercard`, `expeditioncard`, `expeditionlist`, `receptioncard`, `receptionlist`
+- Callbacks : `formConfirm`, `addMoreMassActions`, `doMassActions`, `doPreMassActions`, `getLabel`, `printFieldPreListTitle`, `printFieldListSearchParam`, `printFieldListWhere`, `beforePDFCreation`, `pdf_build_address`
+
+### Triggers
+
+- `core/triggers/interface_99_modMMIShipping_CarrierCostTriggers.class.php`
+
+### Classes et composants
+
+- `class/actions_mmishipping.class.php`
+- `class/mmishipping.class.php`
+- `lib/mmishipping.lib.php`
+
+## Prérequis
+
+- Dolibarr >= 11.0 (branche `20.0` : Dolibarr 20.0).
+- Modules MMI : `mmicommon`. **`mmicommon` doit être activé en premier.**
+- Modules cœur : `product`, `fournisseur`, `expedition`, `reception`.
 
 ## Installation
 
-### From the ZIP file and GUI interface
+1. Copier le module dans `htdocs/custom/mmishipping` :
 
-If the module is a ready to deploy zip file, so with a name module_xxx-version.zip (like when downloading it from a market place like [Dolistore](https://www.dolistore.com)),
-go into menu ```Home - Setup - Modules - Deploy external module``` and upload the zip file.
+   ```sh
+   cd htdocs/custom
+   git clone <dépôt> mmishipping
+   ```
 
-Note: If this screen tell you that there is no "custom" directory, check that your setup is correct:
+2. Dans Dolibarr : **Configuration → Modules**, activer d'abord `mmicommon`, puis ce module.
+3. Vérifier les permissions dans la fiche des utilisateurs concernés.
 
-- In your Dolibarr installation directory, edit the ```htdocs/conf/conf.php``` file and check that following lines are not commented:
+## Licence
 
-    ```php
-    //$dolibarr_main_url_root_alt ...
-    //$dolibarr_main_document_root_alt ...
-    ```
+GPLv3 ou ultérieure — voir `COPYING`. Documentation sous GFDL.
 
-- Uncomment them if necessary (delete the leading ```//```) and assign a sensible value according to your Dolibarr installation
+## Changelog
 
-    For example :
-
-    - UNIX:
-        ```php
-        $dolibarr_main_url_root_alt = '/custom';
-        $dolibarr_main_document_root_alt = '/var/www/Dolibarr/htdocs/custom';
-        ```
-
-    - Windows:
-        ```php
-        $dolibarr_main_url_root_alt = '/custom';
-        $dolibarr_main_document_root_alt = 'C:/My Web Sites/Dolibarr/htdocs/custom';
-        ```
-
-### From a GIT repository
-
-Clone the repository in ```$dolibarr_main_document_root_alt/mmishipping```
-
-```sh
-cd ....../custom
-git clone git@github.com:gitlogin/mmishipping.git mmishipping
-```
-
-### <a name="final_steps"></a>Final steps
-
-From your browser:
-
-  - Log into Dolibarr as a super-administrator
-  - Go to "Setup" -> "Modules"
-  - You should now be able to find and enable the module
-
--->
-
-## Licenses
-
-### Main code
-
-GPLv3 or (at your option) any later version. See file COPYING for more information.
-
-### Documentation
-
-All texts and readmes are licensed under GFDL.
+Voir [CHANGELOG.md](CHANGELOG.md) (évolutions datées).
