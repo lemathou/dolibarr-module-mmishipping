@@ -110,3 +110,4 @@ MMIShippingPortEditInvoiceError = Erreur lors de la mise à jour de la facture %
 MMIShippingHome = Accueil
 MMIShippingHomeIntro = Vue d'ensemble du module expédition MMI : analyse des coûts transporteur et paramétrage.
 MMIShippingHomeLinks = Accès rapides
+MMIShippingDescription=Expédition et réception MMI : affectation DF, autoliquidation, port, coûts transporteur et hooks PDF.

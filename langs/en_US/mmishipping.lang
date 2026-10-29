@@ -55,3 +55,4 @@ MyWidgetDescription = My widget description
 MMIShippingHome = Home
 MMIShippingHomeIntro = MMI shipping module overview: carrier cost analysis and settings.
 MMIShippingHomeLinks = Quick links
+MMIShippingDescription=MMI shipping/receiving: DF assignment, self-liquidation, port, carrier costs and PDF hooks.
